@@ -29,8 +29,8 @@ class SHA512
     public:
         SHA512(std::string msg)
         {
-            // length is represented by a 64 bit unsigned integer
-            uint64_t len = msg.length()*8;
+            // length is represented by a 128 bit unsigned integer
+            unsigned __int128 len = msg.length()*8;
             
             std::bitset<8> binary;
             std::vector<std::bitset<8>> Word;
@@ -39,10 +39,10 @@ class SHA512
                 binary = std::bitset<8>(c);
             }
             // padding of zeros
-            uint64_t padding = (BLOCK_SIZE - len+1 - 128) % 1024;
+            unsigned __int128 padding = (BLOCK_SIZE - len+1 - 128) % 1024;
             std::string pad(padding, '0');
             std::bitset<1> _1 = std::bitset<1>('1');
-            auto paddedBits = binary, _1,pad;//std::bitset<padding>(0);
+            std::bitset<8> paddedBits = binary, _1, pad;//std::bitset<padding>(0);
             std::cout << "padding of sha512 message: " << padding
                       << "\nlength of message: " << len << std::endl
                       << "padded bits: " << paddedBits;
