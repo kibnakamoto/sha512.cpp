@@ -5,20 +5,8 @@
 #include <string.h>
 #include <vector>
 
-// std::vector<std::bitset<8>> convertToHex(std::string str)
-// {
-//     std::bitset<8> b;
-//     std::vector<std::bitset<8>> vec;
-//     for (char c : str)
-//     {
-//         auto dec = (int) c;
-//         // std::cout << std::hex << dec;
-//         auto b = std::bitset<8>(c);
-//         vec.push_back(b);
-//         std::cout << b;
-//     }
-//     return vec;
-// }
+//  97, 115 = 24947 // convert string to binary then to decimal to use bitwise operations
+// a + s = 24947
 
 class SHA512
 {
@@ -30,22 +18,25 @@ class SHA512
         SHA512(std::string msg)
         {
             // length is represented by a 128 bit unsigned integer
-            unsigned __int128 len = msg.length()*8;
-            
+            __uint128_t len = msg.length()*8;
+
             std::bitset<8> binary;
             std::vector<std::bitset<8>> Word;
             for (char c : msg)
             {
                 binary = std::bitset<8>(c);
             }
+            
             // padding of zeros
-            unsigned __int128 padding = (BLOCK_SIZE - len+1 - 128) % 1024;
-            std::string pad(padding, '0');
-            std::bitset<1> _1 = std::bitset<1>('1');
-            std::bitset<8> paddedBits = binary, _1, pad;//std::bitset<padding>(0);
-            std::cout << "padding of sha512 message: " << padding
-                      << "\nlength of message: " << len << std::endl
-                      << "padded bits: " << paddedBits;
+            const __uint128_t padding = (BLOCK_SIZE - len+1 - 128) % 1024;
+            std::printf(padding);
+            for (int c=0;c<msg.length();c++)
+            {
+                std::bitset<8> paddedBits = std::bitset<8>(msg[c]);
+            }
+            // std::cout << "padding of sha512 message: " << (std::string)padding
+            //           << "\nlength of message: " << len << std::endl
+            //           << "padded bits: " << paddedBits;
         }
 };
 
