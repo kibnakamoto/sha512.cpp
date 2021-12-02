@@ -1,11 +1,11 @@
-const uint64_t H[8] {
+const __uint128_t H[8] {
     0x6a09e667f3bcc908ULL, 0xbb67ae8584caa73bULL, 
     0x3c6ef372fe94f82bULL, 0xa54ff53a5f1d36f1ULL, 
     0x510e527fade682d1ULL, 0x9b05688c2b3e6c1fULL, 
     0x1f83d9abfb42bd6bULL, 0x5be0cd19137e2179ULL
 };
 
-const uint64_t K[80] =
+const __uint128_t K[80] =
 {
     0x428a2f98d728ae22ULL, 0x7137449123ef65cdULL,
     0xb5c0fbcfec4d3b2fULL, 0xe9b5dba58189dbbcULL,
