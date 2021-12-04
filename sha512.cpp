@@ -13,6 +13,7 @@ class SHA512
     protected:
         const unsigned int DIGEST_SIZE = 0x80; // 128
         const unsigned int BLOCK_SIZE = 1024; // in bits
+        std::vector<std::bitset<8>> Word;
 
     public:
         SHA512(std::string msg)
@@ -20,23 +21,15 @@ class SHA512
             // length is represented by a 128 bit unsigned integer
             __uint128_t len = msg.length()*8;
 
-            std::bitset<8> binary;
-            std::vector<std::bitset<8>> Word;
-            for (char c : msg)
-            {
-                binary = std::bitset<8>(c);
-            }
-            
+
             // padding of zeros
             const __uint128_t padding = (BLOCK_SIZE - len+1 - 128) % 1024;
-            std::printf(padding);
+            unsigned char* message;
+            
             for (int c=0;c<msg.length();c++)
             {
-                std::bitset<8> paddedBits = std::bitset<8>(msg[c]);
+                message = (unsigned char*)msg.c_str();
             }
-            // std::cout << "padding of sha512 message: " << (std::string)padding
-            //           << "\nlength of message: " << len << std::endl
-            //           << "padded bits: " << paddedBits;
         }
 };
 
