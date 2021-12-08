@@ -86,7 +86,7 @@ class SHA512
         typedef unsigned long long uint64;
         static const uint64 DIGEST_SIZE = 0x80; // 128 bytes
         static const uint64 BLOCK_SIZE = 1024; // in bits
-        unsigned char Word[128];
+        unsigned char Word[80];
 
     public:
         SHA512(std::string msg)
@@ -94,17 +94,16 @@ class SHA512
             ucharptr message = (ucharptr)msg.c_str();
 
             // length is represented by a 128 bit unsigned integer
-            __uint128_t len = msg.length();
             __uint128_t bitlen = msg.length()*8;
 
             // padding
-            const __uint128_t padding = (BLOCK_SIZE - (len+1) - 128) % 1024;
+            const __uint128_t padding = (BLOCK_SIZE - (bitlen+1) - 128) % 1024;
 //            ucharptr add1AndPad = message + '1' + '0'*padding + len;
-            ucharptr pad = message + ((ucharptr*)'1');
+            message =+ ((ucharptr)'1') + ((ucharptr)padding);
 
             for (int i=0;i<3 ;i++)
             {
-                std::cout << " padded message: " << pad[i];
+                std::cout << " padded message: " << message;
             }
         }
 };
