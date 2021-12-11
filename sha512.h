@@ -82,10 +82,11 @@ class SHA512
         uint64 Word[80];
 
     public:
+        /* default class constructor */
         SHA512(std::string msg)
         {
         	// length in bytes.
-            __int128_t len = msg.length();
+            __uint128_t len = msg.length();
             ucharptr message = (ucharptr)msg.c_str();
 
             // length is represented by a 128 bit unsigned integer
@@ -103,15 +104,18 @@ class SHA512
             	WordArray[c] = message[c];
             }
             WordArray[len] = (unsigned char)128; // append 10000000.
- 			for (int c=len+1;c<padding;c++) // if there is extra index it doesn't give value.
-			{
+ 			 for (int c=len+1;c<padding;c++) // if there is extra index it doesn't give value.
+			 {
 				 WordArray[c] = (unsigned char)'0';
-			}
+			 }
+
  			 // append length in bytes
- 			 for (int c=len+1+padding;c<16;c++)
+ 			 for (int c=0;c<16;c++)
  			 {
  				 WordArray[padding+len+1+c] = ((unsigned char*)bitlen)[c];
  			 }
+ 			 // word array built.
+
 			 for (int i=0;i<padding+(len+1)+16;i++)
 			 {
 				 std::cout << WordArray[i] << "\t";
