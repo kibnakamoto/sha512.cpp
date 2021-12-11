@@ -1,8 +1,8 @@
+
 /*
- * SHA512.h
- *
+ * github: kibnakamoto
  *  Created on: Dec. 5, 2021
- *      Author: kibarekmek
+ *      Author: kibarekmek(TC)
  */
 
 #ifndef SHA512_H_
@@ -10,13 +10,6 @@
 
 #include <iostream>
 #include <string>
-#include <vector>
-
-/*
- * github: kibnakamoto
- *  Created on: Dec. 5, 2021
- *      Author: kibarekmek(TC)
- */
 
 const __uint128_t H[8]  = {
     0x6a09e667f3bcc908ULL, 0xbb67ae8584caa73bULL,
@@ -86,57 +79,49 @@ class SHA512
         typedef unsigned long long uint64;
         static const uint64 DIGEST_SIZE = 0x80; // 128 bytes
         static const uint64 BLOCK_SIZE = 1024; // in bits
-        unsigned char Word[80];
+        uint64 Word[80];
 
     public:
         SHA512(std::string msg)
         {
+        	// length in bytes.
+            __int128_t len = msg.length();
             ucharptr message = (ucharptr)msg.c_str();
 
             // length is represented by a 128 bit unsigned integer
-            __uint128_t bitlen = msg.length()*8;
+            __uint128_t bitlen = len*8;
 
             // padding
-            const __uint128_t padding = (BLOCK_SIZE - (bitlen+1) - 128) % 1024;
-//            ucharptr add1AndPad = message + '1' + '0'*padding + len;
-            message =+ ((ucharptr)'1') + ((ucharptr)padding);
+            const __uint128_t padding = ((BLOCK_SIZE - (bitlen+1) - 128) % 1024)-7;
+            padding /= 8; // padding in bytes.
 
-            for (int i=0;i<3 ;i++)
+            unsigned char WordArray[padding+(len+1)+16];
+             // Add 8 of ucharptr var from padded message into one var. that way it is 64 bit.
+             // Then pad again after adding to Word array until the length of word array is 64x80.
+            for (int c=0;c<len;c++)
             {
-                std::cout << " padded message: " << message;
+            	WordArray[c] = message[c];
             }
+            WordArray[len] = (unsigned char)128; // append 10000000.
+ 			for (int c=len+1;c<padding;c++) // if there is extra index it doesn't give value.
+			{
+				 WordArray[c] = (unsigned char)'0';
+			}
+ 			 // append length in bytes
+ 			 for (int c=len+1+padding;c<16;c++)
+ 			 {
+ 				 WordArray[padding+len+1+c] = ((unsigned char*)bitlen)[c];
+ 			 }
+			 for (int i=0;i<padding+(len+1)+16;i++)
+			 {
+				 std::cout << WordArray[i] << "\t";
+			 }
+			 std::cout << std::endl;
+			 // decimal values will be used for data manipulation.
+
+             std::cout << " padded message: " << message;
         }
 };
 
 
 #endif /* SHA512_H_ */
-
-#include <iostream>
-// #include <string>
-// #define bit8(x) ((8 - x.length())%8)
-
-// // Add 8 of ucharptr var from padded message into one var. that way it is 64 bit. 
-// // Then pad again after adding to Word array until the length of word array is 64x80.
-
-// int main()
-// {
-//     typedef unsigned long long uint64_t;
-//     std::string msg = "as";
-//     unsigned char* message = (unsigned char*)msg.c_str();
-//     uint64_t Word[msg.length()];
-//     uint64_t WordArray[80];
-//     for (int c=0;c<msg.length();c++) // if there is extra index it doesn't give value. change sha512.h in eclipse.
-//     {
-//         Word[c] = (uint64_t)message[c];
-//     }
-//     // msg.length() to a multiple of 8. eq: #define bit8(x) ((8 - x.length())-8)
-//     WordArray = {Word[0,bit8(msg)], (uint64_t)(((unsigned char)'0')*
-//                  (1024-(msg.length()+1)- 128)%1024)};
-//     for (int i=0;i<80;i++)
-//     {
-//         std::cout << WordArray[i] << "\t";
-//     }
-//     std::cout << std::endl;
-//     std::cout << Word; // decimal values will be used for data manupilation.
-//     return 0; // only use indexes to access array.
-// }
