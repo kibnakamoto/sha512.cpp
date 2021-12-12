@@ -93,9 +93,9 @@ class SHA512
             __uint128_t bitlen = len*8;
 
             // padding
-            const __uint128_t padding = ((BLOCK_SIZE - (bitlen+1) - 128) % 1024)-7;
-            padding /= 8; // padding in bytes.
-
+            __uint128_t padding = ((BLOCK_SIZE - (bitlen+1) - 128) % 1024)-7;
+            padding /= 8; // padding in bytes. // CHANGE PADDING TO NON CONSTANT
+        
             unsigned char WordArray[padding+(len+1)+16];
              // Add 8 of ucharptr var from padded message into one var. that way it is 64 bit.
              // Then pad again after adding to Word array until the length of word array is 64x80.
@@ -116,9 +116,9 @@ class SHA512
  			 }
  			 // word array built.
 
-			 for (int i=0;i<padding+(len+1)+16;i++)
+			 for (int c=0;c<padding+(len+1)+16;c++)
 			 {
-				 std::cout << WordArray[i] << "\t";
+				 std::cout << WordArray[c] << "\t";
 			 }
 			 std::cout << std::endl;
 			 // decimal values will be used for data manipulation.
