@@ -1,5 +1,5 @@
-
 /*
+* By: Taha Canturk
  * github: kibnakamoto
  *  Created on: Dec. 5, 2021
  *      Author: kibarekmek(TC)
@@ -68,9 +68,10 @@ const __uint128_t K[80] =
 // majority
 #define Maj(x,y,z) (x & y)^(x & z)^(y & z)
 
-
-//  97, 115 = 24947 // convert string to binary then to decimal to use bitwise operators
-// a + s = 24947
+// binary operators
+#define Shr(x,n) (x >> n)
+#define Rotr(x,n) ((x >> n)|(x << (sizeof(x)<<3)-n))
+// decimal values will be used for data manipulation.
 
 class SHA512
 {
@@ -94,36 +95,50 @@ class SHA512
 
             // padding
             __uint128_t padding = ((BLOCK_SIZE - (bitlen+1) - 128) % 1024)-7;
-            padding /= 8; // padding in bytes. // CHANGE PADDING TO NON CONSTANT
-        
+            padding /= 8; // padding in bytes.
+
             unsigned char WordArray[padding+(len+1)+16];
-             // Add 8 of ucharptr var from padded message into one var. that way it is 64 bit.
-             // Then pad again after adding to Word array until the length of word array is 64x80.
+            // Add 8 of ucharptr var from padded message into one var. that way 
+            // it is 64 bit. Then pad again after adding to Word array 
+            // until the length of word array is 64x80.
             for (int c=0;c<len;c++)
             {
-            	WordArray[c] = message[c];
+                WordArray[c] = message[c];
             }
-            WordArray[len] = (unsigned char)128; // append 10000000.
- 			 for (int c=len+1;c<padding;c++) // if there is extra index it doesn't give value.
-			 {
-				 WordArray[c] = (unsigned char)'0';
-			 }
-
- 			 // append length in bytes
- 			 for (int c=0;c<16;c++)
- 			 {
- 				 WordArray[padding+len+1+c] = ((unsigned char*)bitlen)[c];
- 			 }
- 			 // word array built.
-
-			 for (int c=0;c<padding+(len+1)+16;c++)
-			 {
-				 std::cout << WordArray[c] << "\t";
-			 }
-			 std::cout << std::endl;
-			 // decimal values will be used for data manipulation.
-
-             std::cout << " padded message: " << message;
+            WordArray[len] = (unsigned char)0x80; // append 10000000.
+            for (int c=len+1;c<padding;c++)
+            {
+                WordArray[c] = (unsigned char)'0';
+            }
+            
+            // append length in bytes
+            for (int c=0;c<16;c++)
+            {
+                unsigned char extraPadding = sizeof(bitlen) - 
+                WordArray[padding+len+1+c] = ((unsigned char)bitlen);
+            }
+            std::cout << WordArray;
+            /*
+            // WORD ARRAY BUILT.
+            // (padding+len+1+16)/8 to calculate how many indexes of Word it will use.
+            for (int c=0;c<padding+len+1+16;c++)
+            {
+                auto WordVar =  WordArray[c];
+            }
+            // divide by 8 bytes for message schedule
+            // convert uint8 to uint64 // THIS PART ISNT DONE
+            for (int c=0;c<80;c++)
+            {
+                Word[c] = WordArray[c];
+            }
+            
+            uint64 V[8]; // initialize 64 bit unsigned values
+            for (int c=0;c<8;c++)
+            {
+                V[c] = H[c];
+            }*/
+            
+            // define message schedule
         }
 };
 
