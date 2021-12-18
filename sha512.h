@@ -10,6 +10,7 @@
 
 #include <iostream>
 #include <string>
+#include <cstring>
 
 const __uint128_t H[8]  = {
     0x6a09e667f3bcc908ULL, 0xbb67ae8584caa73bULL,
@@ -91,7 +92,7 @@ class SHA512
             ucharptr message = (ucharptr)msg.c_str();
 
             // length is represented by a 128 bit unsigned integer
-            __uint128_t bitlen = len*8;
+            __uint128_t bitlen = len << 3;
 
             // padding
             __uint128_t padding = ((BLOCK_SIZE - (bitlen+1) - 128) % 1024)-7;
@@ -112,14 +113,12 @@ class SHA512
             }
             
             // append length in bytes
-            for (int c=0;c<16;c++)
+            for (int c=0;c<1;c++)
             {
-                unsigned char extraPadding = sizeof(bitlen) - 
                 WordArray[padding+len+1+c] = ((unsigned char)bitlen);
             }
             std::cout << WordArray;
-            /*
-            // WORD ARRAY BUILT.
+
             // (padding+len+1+16)/8 to calculate how many indexes of Word it will use.
             for (int c=0;c<padding+len+1+16;c++)
             {
