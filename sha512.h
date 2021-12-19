@@ -1,7 +1,7 @@
 /*
-* By: Taha Canturk
- * github: kibnakamoto
- *  Created on: Dec. 5, 2021
+ * By: Taha Canturk
+ *  github: kibnakamoto
+ *   Created on: Dec. 5, 2021
  *      Author: kibarekmek(TC)
  */
 
@@ -11,6 +11,7 @@
 #include <iostream>
 #include <string>
 #include <cstring>
+#include <stdint.h>
 
 const __uint128_t H[8]  = {
     0x6a09e667f3bcc908ULL, 0xbb67ae8584caa73bULL,
@@ -79,10 +80,10 @@ class SHA512
     protected:
         typedef unsigned char* ucharptr;
         typedef unsigned long long uint64;
-        static const uint64 DIGEST_SIZE = 0x80; // 128 bytes
-        static const uint64 BLOCK_SIZE = 1024; // in bits
+        static const int DIGEST_SIZE = 0x80; // 128 bytes
+        static const int BLOCK_SIZE = 1024; // in bits
         uint64 Word[80];
-
+        
     public:
         /* default class constructor */
         SHA512(std::string msg)
@@ -90,56 +91,39 @@ class SHA512
         	// length in bytes.
             __uint128_t len = msg.length();
             ucharptr message = (ucharptr)msg.c_str();
-
+            
             // length is represented by a 128 bit unsigned integer
             __uint128_t bitlen = len << 3;
-
+            
             // padding
             __uint128_t padding = ((BLOCK_SIZE - (bitlen+1) - 128) % 1024)-7;
             padding /= 8; // padding in bytes.
-
             unsigned char WordArray[padding+(len+1)+16];
-            // Add 8 of ucharptr var from padded message into one var. that way 
-            // it is 64 bit. Then pad again after adding to Word array 
-            // until the length of word array is 64x80.
+            memset(WordArray, (unsigned char)'0', padding+(len+1)+16);
             for (int c=0;c<len;c++)
             {
                 WordArray[c] = message[c];
             }
             WordArray[len] = (unsigned char)0x80; // append 10000000.
-            for (int c=len+1;c<padding;c++)
-            {
-                WordArray[c] = (unsigned char)'0';
-            }
             
             // append length in bytes
-            for (int c=0;c<1;c++)
-            {
-                WordArray[padding+len+1+c] = ((unsigned char)bitlen);
-            }
+            WordArray[padding+len+1] = (unsigned char)bitlen;
+            
             std::cout << WordArray;
-
-            // (padding+len+1+16)/8 to calculate how many indexes of Word it will use.
-            for (int c=0;c<padding+len+1+16;c++)
-            {
-                auto WordVar =  WordArray[c];
-            }
+            
             // divide by 8 bytes for message schedule
-            // convert uint8 to uint64 // THIS PART ISNT DONE
+            // convert uint8 to uint64_t // THIS PART ISNT DONE
             for (int c=0;c<80;c++)
             {
                 Word[c] = WordArray[c];
             }
             
-            uint64 V[8]; // initialize 64 bit unsigned values
+            uint64_t V[8]; // initialize 64 bit unsigned values
             for (int c=0;c<8;c++)
             {
                 V[c] = H[c];
-            }*/
+            }
             
             // define message schedule
         }
 };
-
-
-#endif /* SHA512_H_ */
