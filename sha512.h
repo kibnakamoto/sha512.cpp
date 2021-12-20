@@ -12,15 +12,18 @@
 #include <string>
 #include <cstring>
 #include <stdint.h>
+#include <bit>
 
-const __uint128_t H[8]  = {
+using byte = unsigned char;
+
+const uint64_t H[8]  = {
     0x6a09e667f3bcc908ULL, 0xbb67ae8584caa73bULL,
     0x3c6ef372fe94f82bULL, 0xa54ff53a5f1d36f1ULL,
     0x510e527fade682d1ULL, 0x9b05688c2b3e6c1fULL,
     0x1f83d9abfb42bd6bULL, 0x5be0cd19137e2179ULL
 };
 
-const __uint128_t K[80] =
+const uint64_t K[80] =
 {
     0x428a2f98d728ae22ULL, 0x7137449123ef65cdULL,
     0xb5c0fbcfec4d3b2fULL, 0xe9b5dba58189dbbcULL,
@@ -75,6 +78,20 @@ const __uint128_t K[80] =
 #define Rotr(x,n) ((x >> n)|(x << (sizeof(x)<<3)-n))
 // decimal values will be used for data manipulation.
 
+// convert to big endian
+inline uint64_t BE64(uint8_t* y, uint64_t x)
+{ // byte = unsigned char
+    *y++=(byte)((x>>56)&0xff);
+    *y++=(byte)((x>>48)&0xff);
+    *y++=(byte)((x>>40)&0xff);
+    *y++=(byte)((x>>32)&0xff);
+    *y++=(byte)((x>>24)&0xff);
+    *y++=(byte)((x>>16)&0xff);
+    *y++=(byte)((x>>8)&0xff);
+    *y=(byte)(x&0xff);
+    return y;
+};
+
 class SHA512
 {
     protected:
@@ -82,7 +99,7 @@ class SHA512
         typedef unsigned long long uint64;
         static const int DIGEST_SIZE = 0x80; // 128 bytes
         static const int BLOCK_SIZE = 1024; // in bits
-        uint64 Word[80];
+        uint64_t Word[80];
         
     public:
         /* default class constructor */
@@ -107,9 +124,10 @@ class SHA512
             WordArray[len] = (unsigned char)0x80; // append 10000000.
             
             // append length in bytes
-            WordArray[padding+len+1] = (unsigned char)bitlen;
-            
+            WordArray[padding+len+1] = BE64(bitlen);
+
             std::cout << WordArray;
+            
             
             // divide by 8 bytes for message schedule
             // convert uint8 to uint64_t // THIS PART ISNT DONE
