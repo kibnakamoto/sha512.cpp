@@ -12,8 +12,6 @@
 #include <string>
 #include <cstring>
 #include <stdint.h>
-#include <bit>
-
 using byte = unsigned char;
 
 const uint64_t H[8]  = {
@@ -76,19 +74,37 @@ const uint64_t K[80] =
 // binary operators
 #define Shr(x,n) (x >> n)
 #define Rotr(x,n) ((x >> n)|(x << (sizeof(x)<<3)-n))
-// decimal values will be used for data manipulation.
 
 // convert to big endian
-inline uint64_t BE64(uint8_t* y, uint64_t x)
+inline uint8_t* BE128(uint8_t* y, __uint128_t len)
 { // byte = unsigned char
-    *y++=(byte)((x>>56)&0xff);
-    *y++=(byte)((x>>48)&0xff);
-    *y++=(byte)((x>>40)&0xff);
-    *y++=(byte)((x>>32)&0xff);
-    *y++=(byte)((x>>24)&0xff);
-    *y++=(byte)((x>>16)&0xff);
-    *y++=(byte)((x>>8)&0xff);
-    *y=(byte)(x&0xff);
+    // for (int c=120+1;c>=0;c--)
+    // {
+    //     if (c%8==0)
+    //     {
+    //         *y++=(byte)((x>>c)&0xff);
+    //     }
+    //     else if (c==0)
+    //     {
+    //         *y++=(byte)((x>>c)&0xff);
+    //     }
+    // }
+    *y++=(byte)((len>>120)&0xff);
+    *y++=(byte)((len>>112)&0xff);
+    *y++=(byte)((len>>104)&0xff);
+    *y++=(byte)((len>>96)&0xff);
+    *y++=(byte)((len>>88)&0xff);
+    *y++=(byte)((len>>80)&0xff);
+    *y++=(byte)((len>>72)&0xff);
+    *y++=(byte)((len>>64)&0xff);
+    *y++=(byte)((len>>56)&0xff);
+    *y++=(byte)((len>>48)&0xff);
+    *y++=(byte)((len>>40)&0xff);
+    *y++=(byte)((len>>32)&0xff);
+    *y++=(byte)((len>>24)&0xff);
+    *y++=(byte)((len>>16)&0xff);
+    *y++=(byte)((len>>8)&0xff);
+    *y=(byte)(len&0xff);
     return y;
 };
 
@@ -97,8 +113,8 @@ class SHA512
     protected:
         typedef unsigned char* ucharptr;
         typedef unsigned long long uint64;
-        static const int DIGEST_SIZE = 0x80; // 128 bytes
-        static const int BLOCK_SIZE = 1024; // in bits
+        static const unsigned int DIGEST_SIZE = 0x80; // 128 bytes
+        static const unsigned int BLOCK_SIZE = 1024; // in bits
         uint64_t Word[80];
         
     public:
@@ -112,36 +128,44 @@ class SHA512
             // length is represented by a 128 bit unsigned integer
             __uint128_t bitlen = len << 3;
             
-            // padding
-            __uint128_t padding = ((BLOCK_SIZE - (bitlen+1) - 128) % 1024)-7;
-            padding /= 8; // padding in bytes.
-            unsigned char WordArray[padding+(len+1)+16];
-            memset(WordArray, (unsigned char)'0', padding+(len+1)+16);
+            // padding with zeros
+            unsigned int padding = ((BLOCK_SIZE - (bitlen+1) - 128) % 1024)-7;
+            padding /= 8; // in bytes.
+            byte WordArray[padding+(len+1)+16]; // initialize WordArray for creating blocks
+            memset(WordArray, (byte)'0', padding+len+17);
             for (int c=0;c<len;c++)
             {
                 WordArray[c] = message[c];
             }
-            WordArray[len] = (unsigned char)0x80; // append 10000000.
-            
+            WordArray[len] = (byte)0x80; // append 10000000.
+            uint8_t *y = nullptr; // don't know how to assign bitlen(type: __uint128_t)
+            // BE128(y, bitlen);
             // append length in bytes
-            WordArray[padding+len+1] = BE64(bitlen);
+            for (int c=0;c<0;c++)
+            {
+                WordArray[padding+len+1+c] = y[c];
+            }
 
             std::cout << WordArray;
             
+            /* ====================== (NON-WORD-ARRAY) ====================== */
             
             // divide by 8 bytes for message schedule
             // convert uint8 to uint64_t // THIS PART ISNT DONE
-            for (int c=0;c<80;c++)
+            for (int c=0;c<(padding+len+17)/8;c++)
             {
                 Word[c] = WordArray[c];
             }
-            
-            uint64_t V[8]; // initialize 64 bit unsigned values
-            for (int c=0;c<8;c++)
+            if ((padding+len+17)/8 <= 80)
             {
-                V[c] = H[c];
+                for (int c=0;c<80-(padding+len+17)/8;c++)
+                {
+                    Word[(padding+len+17)/8+c] = (byte)'0';
+                }
             }
-            
-            // define message schedule
+            /* WORD DONE */
+            // create message schedule
         }
 };
+
+#endif /* SHA512_H_ */
