@@ -1,5 +1,4 @@
 /*
- * By: Taha Canturk
  *  github: kibnakamoto
  *   Created on: Dec. 5, 2021
  *      Author: kibarekmek(TC)
@@ -76,8 +75,8 @@ const uint64_t K[80] =
 #define Rotr(x,n) ((x >> n)|(x << (sizeof(x)<<3)-n))
 
 // convert to big endian
-inline uint8_t* BE128(uint8_t* y, __uint128_t len)
-{ // byte = unsigned char
+inline __uint8_t* BE128(__uint8_t* y, __uint128_t len)
+{ // len = bitlen in this function
     // for (int c=120+1;c>=0;c--)
     // {
     //     if (c%8==0)
@@ -123,48 +122,61 @@ class SHA512
         {
         	// length in bytes.
             __uint128_t len = msg.length();
-            ucharptr message = (ucharptr)msg.c_str();
             
             // length is represented by a 128 bit unsigned integer
             __uint128_t bitlen = len << 3;
             
             // padding with zeros
-            unsigned int padding = ((BLOCK_SIZE - (bitlen+1) - 128) % 1024)-7;
+            unsigned int padding = ((BLOCK_SIZE - (bitlen+1) - 128) % BLOCK_SIZE)-7;
             padding /= 8; // in bytes.
-            byte WordArray[padding+(len+1)+16]; // initialize WordArray for creating blocks
+            int n_pad;
+            
+            // required b/c that adds random value to the end of WordArray
+            if (len < 128)
+            {
+                n_pad = padding+len+16;
+            } else {
+                n_pad = padding+len+17;
+            }
+            uint8_t WordArray[n_pad];
+            // uint8_t WordArray[padding+len+17]; // initialize WordArray for creating blocks
             memset(WordArray, (byte)'0', padding+len+17);
             for (int c=0;c<len;c++)
             {
-                WordArray[c] = message[c];
+                WordArray[c] = ((ucharptr)msg.c_str())[c];
             }
             WordArray[len] = (byte)0x80; // append 10000000.
-            uint8_t *y = nullptr; // don't know how to assign bitlen(type: __uint128_t)
+            // __uint8_t* y = (__uint8_t*)bitlen;
             // BE128(y, bitlen);
             // append length in bytes
             for (int c=0;c<0;c++)
             {
-                WordArray[padding+len+1+c] = y[c];
+                // WordArray[padding+len+1+c] = y[c];
             }
-
             std::cout << WordArray;
+            std::cout << std::endl << "128B128B128B128B128B"
+                      << "8B128B128B128B128B128B128B128B128B128B128B128B128B128B"
+                      << "128B128B128B128B128B128B128B128B128B128B128B128B128B12";
+            // if length of word array doesn't match. WordArray is wrong
             
-            /* ====================== (NON-WORD-ARRAY) ====================== */
+            /* ====================== (WORD-ARRAY DONE) ====================== */
             
             // divide by 8 bytes for message schedule
             // convert uint8 to uint64_t // THIS PART ISNT DONE
             for (int c=0;c<(padding+len+17)/8;c++)
             {
-                Word[c] = WordArray[c];
+                Word[c] = WordArray[c]; // adds them as 8 bit instead of 64. Wrong/
             }
+            
             if ((padding+len+17)/8 <= 80)
             {
-                for (int c=0;c<80-(padding+len+17)/8;c++)
-                {
-                    Word[(padding+len+17)/8+c] = (byte)'0';
-                }
+                memset(Word, (byte)'0', 80-(padding+len+17)/8);
             }
-            /* WORD DONE */
+            
+            /* ======================== (WORD DONE) ======================== */
             // create message schedule
+            
+            // s0,s1. manipulate padding of Word array.
         }
 };
 
