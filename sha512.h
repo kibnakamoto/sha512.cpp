@@ -11,7 +11,6 @@
 #include <string>
 #include <cstring>
 #include <stdint.h>
-using byte = unsigned char;
 
 const uint64_t H[8]  = {
     0x6a09e667f3bcc908ULL, 0xbb67ae8584caa73bULL,
@@ -81,40 +80,40 @@ inline __uint8_t* BE128(__uint8_t* y, __uint128_t len)
     // {
     //     if (c%8==0)
     //     {
-    //         *y++=(byte)((x>>c)&0xff);
+    //         *y++=(uint8_t)((x>>c)&0xff);
     //     }
     //     else if (c==0)
     //     {
-    //         *y++=(byte)((x>>c)&0xff);
+    //         *y++=(uint8_t)((x>>c)&0xff);
     //     }
     // }
-    *y++=(byte)((len>>120)&0xff);
-    *y++=(byte)((len>>112)&0xff);
-    *y++=(byte)((len>>104)&0xff);
-    *y++=(byte)((len>>96)&0xff);
-    *y++=(byte)((len>>88)&0xff);
-    *y++=(byte)((len>>80)&0xff);
-    *y++=(byte)((len>>72)&0xff);
-    *y++=(byte)((len>>64)&0xff);
-    *y++=(byte)((len>>56)&0xff);
-    *y++=(byte)((len>>48)&0xff);
-    *y++=(byte)((len>>40)&0xff);
-    *y++=(byte)((len>>32)&0xff);
-    *y++=(byte)((len>>24)&0xff);
-    *y++=(byte)((len>>16)&0xff);
-    *y++=(byte)((len>>8)&0xff);
-    *y=(byte)(len&0xff);
+    *y++=(uint8_t)((len>>120)&0xff);
+    *y++=(uint8_t)((len>>112)&0xff);
+    *y++=(uint8_t)((len>>104)&0xff);
+    *y++=(uint8_t)((len>>96)&0xff);
+    *y++=(uint8_t)((len>>88)&0xff);
+    *y++=(uint8_t)((len>>80)&0xff);
+    *y++=(uint8_t)((len>>72)&0xff);
+    *y++=(uint8_t)((len>>64)&0xff);
+    *y++=(uint8_t)((len>>56)&0xff);
+    *y++=(uint8_t)((len>>48)&0xff);
+    *y++=(uint8_t)((len>>40)&0xff);
+    *y++=(uint8_t)((len>>32)&0xff);
+    *y++=(uint8_t)((len>>24)&0xff);
+    *y++=(uint8_t)((len>>16)&0xff);
+    *y++=(uint8_t)((len>>8)&0xff);
+    *y=(uint8_t)(len&0xff);
     return y;
 };
 
 class SHA512
 {
     protected:
-        typedef unsigned char* ucharptr;
+        typedef uint8_t* ucharptr;
         typedef unsigned long long uint64;
-        static const unsigned int DIGEST_SIZE = 0x80; // 128 bytes
+        static const unsigned int DIGEST_SIZE = 0x80; // 128 bits
         static const unsigned int BLOCK_SIZE = 1024; // in bits
-        uint64_t Word[80];
+        uint64_t W[80];
         
     public:
         /* default class constructor */
@@ -133,44 +132,58 @@ class SHA512
             // required b/c that adds random value to the end of WordArray
             int n_pad = len < 128 ? n_pad = padding+len+16 : n_pad = padding+len+17;
             uint8_t WordArray[n_pad];
-            // uint8_t WordArray[padding+len+17]; // initialize WordArray for creating blocks
-            memset(WordArray, (byte)'0', padding+len+17);
+            memset(WordArray, (uint8_t)'0', padding+len+17);
             for (int c=0;c<len;c++)
             {
                 WordArray[c] = ((ucharptr)msg.c_str())[c];
             }
-            WordArray[len] = (byte)0x80; // append 10000000.
-            // __uint8_t* y = (__uint8_t*)bitlen;
-            // BE128(y, bitlen);
-            // append length in bytes
-            for (int c=0;c<0;c++)
-            {
-                // WordArray[padding+len+1+c] = y[c];
-            }
+            WordArray[len] = (uint8_t)(1<<7); // append 10000000.
+            
+            // append length
+            
+            /* ====================== (WORD-ARRAY NOT DONE) ====================== */
+            
             std::cout << WordArray;
             std::cout << std::endl << "128B128B128B128B128B"
                       << "8B128B128B128B128B128B128B128B128B128B128B128B128B128B"
                       << "128B128B128B128B128B128B128B128B128B128B128B128B128B12";
-            // if length of word array doesn't match. WordArray is wrong
             
-            /* ====================== (WORD-ARRAY DONE) ====================== */
-            
-            // divide by 8 bytes for message schedule
-            // convert uint8 to uint64_t // THIS PART ISNT DONE
+            // convert WordArray uint8 to uint64_t // THIS PART ISNT DONE
+
+            // pad W with zeros
+            memset(W, (uint64_t)'0', 80);
+
+            // WRONG. need to convert WArray to 64 bit array without more padding
             for (int c=0;c<(padding+len+17)/8;c++)
             {
-                Word[c] = WordArray[c]; // adds them as 8 bit instead of 64. Wrong/
-            }
+                W[c] = WordArray[c]; // adds them as 8 bit instead of 64.
+            } // right now its adding only 16 of the message bytes in uint8_t
+             // format. There is 128 message bytes.
+
+            /* ======================= (WORD NOT DONE) ======================== */
             
-            if ((padding+len+17)/8 <= 80)
-            {
-                memset(Word, (byte)'0', 80-(padding+len+17)/8);
-            }
-            
-            /* ======================== (WORD DONE) ======================== */
             // create message schedule
+            for (int c=16;c<80;c++)
+            {
+                // σ0 = (w[c−15] ≫≫ 1) ⊕ (w[c−15] ≫ ≫8) ⊕ (w[c−15] ≫ 7)
+                
+                uint64_t s0 = Rotr(W[c-15],1) xor Rotr(W[c-15],8) xor Shr(W[c-15],7);
+                
+                // σ1 = (w[c−2]  ≫ ≫ 19) ⊕ (w[c−2]  ≫ ≫ 61) ⊕ (w[c−2]  ≫  6)
+                
+                uint64_t s1 = Rotr(W[c-2],19) xor Rotr(W[c-2],61) xor Shr(W[c-2],6);
+                
+                // uint64_t does binary addition 2^64.
+                // w[c] = w[c−16] [+] σ0,c [+] w[c−7] [+] σ1,c
+                W[c] = (W[c-16] + s0 + W[c-7] + s1);
+            }
+            // to print Word array
+            // for (int c=0;c<80;c++)
+            // {
+            //     std::cout << W[c] << std::endl;
+            // }
             
-            // s0,s1. manipulate padding of Word array.
+            /* ================ (MESSAGE-SCHEDULE/Word DONE) ================ */
         }
 };
 
