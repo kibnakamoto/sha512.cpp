@@ -129,15 +129,9 @@ class SHA512
             // padding with zeros
             unsigned int padding = ((BLOCK_SIZE - (bitlen+1) - 128) % BLOCK_SIZE)-7;
             padding /= 8; // in bytes.
-            int n_pad;
             
             // required b/c that adds random value to the end of WordArray
-            if (len < 128)
-            {
-                n_pad = padding+len+16;
-            } else {
-                n_pad = padding+len+17;
-            }
+            int n_pad = len < 128 ? n_pad = padding+len+16 : n_pad = padding+len+17;
             uint8_t WordArray[n_pad];
             // uint8_t WordArray[padding+len+17]; // initialize WordArray for creating blocks
             memset(WordArray, (byte)'0', padding+len+17);
