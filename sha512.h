@@ -75,7 +75,8 @@ const uint64_t K[80] =
 
 // convert to big endian
 inline __uint8_t* BE128(__uint8_t* y, __uint128_t len)
-{ // len = bitlen in this function
+{ 
+    // len = bitlen in this function
     // for (int c=120+1;c>=0;c--)
     // {
     //     if (c%8==0)
@@ -138,8 +139,13 @@ class SHA512
                 WordArray[c] = ((ucharptr)msg.c_str())[c];
             }
             WordArray[len] = (uint8_t)(1<<7); // append 10000000.
+
+            for (int c=padding+len+17;c>padding+len+1;c--)
+            {
+                WordArray[c] = BE128((uint8_t*)bitlen, bitlen)[c];
+            }
             
-            // append length
+            std::cout << appendLen;
             
             /* ====================== (WORD-ARRAY NOT DONE) ====================== */
             
@@ -149,20 +155,20 @@ class SHA512
                       << "128B128B128B128B128B128B128B128B128B128B128B128B128B12";
             
             // convert WordArray uint8 to uint64_t // THIS PART ISNT DONE
-
-            // pad W with zeros
-            memset(W, (uint64_t)'0', 80);
-
-            // WRONG. need to convert WArray to 64 bit array without more padding
-            for (int c=0;c<(padding+len+17)/8;c++)
-            {
-                W[c] = WordArray[c]; // adds them as 8 bit instead of 64.
-            } // right now its adding only 16 of the message bytes in uint8_t
-             // format. There is 128 message bytes.
-
-            /* ======================= (WORD NOT DONE) ======================== */
             
-            // create message schedule
+            // pad W with zeros
+            // memset(W, (uint64_t)'0', 80);
+            
+            // // WRONG. need to convert WArray to 64 bit array without more padding
+            // for (int c=0;c<(padding+len+17)/8;c++)
+            // {
+                // W[c] = WordArray[c]; // adds them as 8 bit instead of 64.
+            // } // right now its adding only 16 of the message bytes in uint8_t
+            //  // format. There is 128 message bytes.
+
+            // /* ======================= (WORD NOT DONE) ======================== */
+            
+            // // create message schedule
             for (int c=16;c<80;c++)
             {
                 // σ0 = (w[c−15] ≫≫ 1) ⊕ (w[c−15] ≫ ≫8) ⊕ (w[c−15] ≫ 7)
@@ -178,10 +184,10 @@ class SHA512
                 W[c] = (W[c-16] + s0 + W[c-7] + s1);
             }
             // to print Word array
-            // for (int c=0;c<80;c++)
-            // {
+            for (int c=0;c<80;c++)
+            {
             //     std::cout << W[c] << std::endl;
-            // }
+            }
             
             /* ================ (MESSAGE-SCHEDULE/Word DONE) ================ */
         }
