@@ -5,8 +5,9 @@
 int main()
 {
     std::string msg;
-    std::cout << "input:\t";
-    getline(std::cin, msg);
+    msg = "";
+    // std::cout << "input:\t";
+    // getline(std::cin, msg);
     SHA512 hash(msg);
     return 0;
 }
