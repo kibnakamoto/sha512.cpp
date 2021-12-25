@@ -12,13 +12,6 @@
 #include <cstring>
 #include <stdint.h>
 
-const uint64_t H[8]  = {
-    0x6a09e667f3bcc908ULL, 0xbb67ae8584caa73bULL,
-    0x3c6ef372fe94f82bULL, 0xa54ff53a5f1d36f1ULL,
-    0x510e527fade682d1ULL, 0x9b05688c2b3e6c1fULL,
-    0x1f83d9abfb42bd6bULL, 0x5be0cd19137e2179ULL
-};
-
 const uint64_t K[80] =
 {
     0x428a2f98d728ae22ULL, 0x7137449123ef65cdULL,
@@ -112,10 +105,15 @@ class SHA512
 {
     protected:
         typedef uint8_t* ucharptr;
-        typedef unsigned long long uint64;
         static const unsigned int DIGEST_SIZE = 0x80; // 128 bits
         static const unsigned int BLOCK_SIZE = 1024; // in bits
         uint64_t W[80];
+        uint64_t H[8] = {
+            0x6a09e667f3bcc908ULL, 0xbb67ae8584caa73bULL,
+            0x3c6ef372fe94f82bULL, 0xa54ff53a5f1d36f1ULL,
+            0x510e527fade682d1ULL, 0x9b05688c2b3e6c1fULL,
+            0x1f83d9abfb42bd6bULL, 0x5be0cd19137e2179ULL
+        };
         
     public:
         /* default class constructor */
@@ -148,12 +146,12 @@ class SHA512
             
             /* ====================== (WORD-ARRAY NOT DONE) ====================== */
             
-            // std::cout << WordArray;
+            std::cout << WordArray;
             // std::cout << std::endl << "128B128B128B128B128B"
             //           << "8B128B128B128B128B128B128B128B128B128B128B128B128B128B"
             //           << "128B128B128B128B128B128B128B128B128B128B128B128B128B12"
             //           << std::endl;
-            
+            std::cout << std::endl;
             // convert WordArray uint8 to uint64_t // THIS PART ISNT DONE
             
             // pad W with zeros
@@ -220,13 +218,19 @@ class SHA512
             // final values
             for (int c=0;c<8;c++)
             {
-                // length of final message is correct.
-                std::cout << std::hex << V[c];
-                // empty string hash value: cf83e1357eefb8bdf1542850d66d8007d620e
-                //                          4050b5715dc83f4a921d36ce9ce47d0d13c5d
-                //                          85f2b0ff8318d2877eec2f63b931bd47417a8
-                //                          1a538327af927da3e
+                H[c] += V[c];
+                std::cout << std::hex << H[c];
+                // hash length = wrong.
             }
+            std::cout << "\n\n" << "cf83e1357eefb8bdf1542850d66d8007d620e4050b57"
+                      << "15dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63"
+                      << "b931bd47417a81a538327af927da3e" << std::endl
+                      << "\t\t\t\t\t\t^ empty string hash value ^";
+        }
+        // return value
+        std::string sha512()
+        {
+            return NULL;
         }
 };
 
