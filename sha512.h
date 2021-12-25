@@ -63,11 +63,12 @@ const uint64_t K[80] =
     0x5fcb6fab3ad6faecULL, 0x6c44198c4a475817ULL
 };
 
-// choice
-#define Ch(x,y,z) (x bitand y)xor(~x bitand z)
+// choice = (x ∧ y) ⊕ (¯x ∧ z)
 
-// majority
-#define Maj(x,y,z) (x & y)^(x & z)^(y & z)
+#define Ch(x,y,z) ((x bitand y)xor(~x bitand z))
+// majority = (x ∧ y) ⊕ (x ∧ z) ⊕ (y ∧ z)
+
+#define Maj(x,y,z) ((x & y)^(x & z)^(y & z))
 
 // binary operators
 #define Shr(x,n) (x >> n)
@@ -142,33 +143,32 @@ class SHA512
 
             for (int c=padding+len+17;c>padding+len+1;c--)
             {
-                WordArray[c] = BE128((uint8_t*)bitlen, bitlen)[c];
+                // WordArray[c] = BE128((uint8_t*)bitlen, bitlen)[c];
             }
-            
-            std::cout << appendLen;
             
             /* ====================== (WORD-ARRAY NOT DONE) ====================== */
             
-            std::cout << WordArray;
-            std::cout << std::endl << "128B128B128B128B128B"
-                      << "8B128B128B128B128B128B128B128B128B128B128B128B128B128B"
-                      << "128B128B128B128B128B128B128B128B128B128B128B128B128B12";
+            // std::cout << WordArray;
+            // std::cout << std::endl << "128B128B128B128B128B"
+            //           << "8B128B128B128B128B128B128B128B128B128B128B128B128B128B"
+            //           << "128B128B128B128B128B128B128B128B128B128B128B128B128B12"
+            //           << std::endl;
             
             // convert WordArray uint8 to uint64_t // THIS PART ISNT DONE
             
             // pad W with zeros
-            // memset(W, (uint64_t)'0', 80);
+            memset(W, (uint64_t)'0', 80);
             
-            // // WRONG. need to convert WArray to 64 bit array without more padding
-            // for (int c=0;c<(padding+len+17)/8;c++)
-            // {
-                // W[c] = WordArray[c]; // adds them as 8 bit instead of 64.
-            // } // right now its adding only 16 of the message bytes in uint8_t
-            //  // format. There is 128 message bytes.
+            // WRONG. need to convert WArray to 64 bit array without more padding
+            for (int c=0;c<(padding+len+17)/8;c++)
+            {
+                W[c] = WordArray[c]; // adds them as 8 bit instead of 64.
+            } // right now its adding only 16 of the message bytes in uint8_t
+             // format. There is 128 message bytes.
 
-            // /* ======================= (WORD NOT DONE) ======================== */
+            /* ======================= (WORD NOT DONE) ======================== */
             
-            // // create message schedule
+            // create message schedule
             for (int c=16;c<80;c++)
             {
                 // σ0 = (w[c−15] ≫≫ 1) ⊕ (w[c−15] ≫ ≫8) ⊕ (w[c−15] ≫ 7)
@@ -183,13 +183,50 @@ class SHA512
                 // w[c] = w[c−16] [+] σ0,c [+] w[c−7] [+] σ1,c
                 W[c] = (W[c-16] + s0 + W[c-7] + s1);
             }
-            // to print Word array
-            for (int c=0;c<80;c++)
+            
+            uint64_t V[8]; // initialize non-constant hash values
+            for(int c=0;c<8;c++)
             {
-            //     std::cout << W[c] << std::endl;
+                V[c] = H[c];
             }
             
-            /* ================ (MESSAGE-SCHEDULE/Word DONE) ================ */
+            // transform blocks
+            for (int c=0;c<80;c++)
+            {
+                // Σ0 = (ac ≫≫ 28) ⊕ (ac ≫≫ 34) ⊕ (ac ≫≫ 39)
+                
+                uint64_t S0 = Rotr(V[c], 28) xor Rotr(V[c], 34) xor Rotr(V[c], 22);
+                
+                // t2 = Σ0,[c] + Maj[c]
+                uint64_t temp2 = S0 + Maj(V[0], V[1], V[2]);
+                
+                // Σ1 = (e ≫≫ 14) ⊕ (e ≫≫ 18) ⊕ (e ≫≫ 41)
+                
+                uint64_t S1 = Rotr(V[4], 14) xor Rotr(V[4], 18) xor Rotr(V[4], 41);
+                
+                // t1 = h + Σ1 + Ch[e,f,g] + K[c] + W[c]
+                uint64_t temp1 = V[7] + S1 + Ch(V[4], V[5], V[6]) + K[c] + W[c];
+                
+                // modify hash values
+                V[7] = V[6];
+                V[6] = V[5];
+                V[5] = V[4];
+                V[4] = V[3] + temp1;
+                V[3] = V[2];
+                V[2] = V[1];
+                V[0] = temp1 + temp2;
+            }
+            
+            // final values
+            for (int c=0;c<8;c++)
+            {
+                // length of final message is correct.
+                std::cout << std::hex << V[c];
+                // empty string hash value: cf83e1357eefb8bdf1542850d66d8007d620e
+                //                          4050b5715dc83f4a921d36ce9ce47d0d13c5d
+                //                          85f2b0ff8318d2877eec2f63b931bd47417a8
+                //                          1a538327af927da3e
+            }
         }
 };
 
