@@ -65,41 +65,16 @@ const uint64_t K[80] =
 
 // binary operators
 #define Shr(x,n) (x >> n)
+#define Shl(x,n) (x << n)
 #define Rotr(x,n) ((x >> n)|(x << (sizeof(x)<<3)-n))
 
-// convert to big endian
-inline __uint8_t* BE128(__uint8_t* y, __uint128_t len)
-{ 
-    // len = bitlen in this function
-    // for (int c=120+1;c>=0;c--)
-    // {
-    //     if (c%8==0)
-    //     {
-    //         *y++=(uint8_t)((x>>c)&0xff);
-    //     }
-    //     else if (c==0)
-    //     {
-    //         *y++=(uint8_t)((x>>c)&0xff);
-    //     }
-    // }
-    *y++=(uint8_t)((len>>120)&0xff);
-    *y++=(uint8_t)((len>>112)&0xff);
-    *y++=(uint8_t)((len>>104)&0xff);
-    *y++=(uint8_t)((len>>96)&0xff);
-    *y++=(uint8_t)((len>>88)&0xff);
-    *y++=(uint8_t)((len>>80)&0xff);
-    *y++=(uint8_t)((len>>72)&0xff);
-    *y++=(uint8_t)((len>>64)&0xff);
-    *y++=(uint8_t)((len>>56)&0xff);
-    *y++=(uint8_t)((len>>48)&0xff);
-    *y++=(uint8_t)((len>>40)&0xff);
-    *y++=(uint8_t)((len>>32)&0xff);
-    *y++=(uint8_t)((len>>24)&0xff);
-    *y++=(uint8_t)((len>>16)&0xff);
-    *y++=(uint8_t)((len>>8)&0xff);
-    *y=(uint8_t)(len&0xff);
-    return y;
-};
+// length which is __uint128_t in 2 uint64_t integers
+std::pair<uint64_t,uint64_t> to2_uint64(__uint128_t source)
+{
+    constexpr const __uint128_t bottom_mask = Shl(__uint128_t{1}, 64) - 1;
+    constexpr const __uint128_t top_mask = ~bottom_mask;
+    return {source bitand bottom_mask, Shr((source bitand top_mask), 64)};
+}
 
 class SHA512
 {
@@ -123,7 +98,7 @@ class SHA512
             __uint128_t len = msg.length();
             
             // length is represented by a 128 bit unsigned integer
-            __uint128_t bitlen = len << 3;
+            __uint128_t bitlen = Shl(len, 3);
             
             // padding with zeros
             unsigned int padding = ((BLOCK_SIZE - (bitlen+1) - 128) % BLOCK_SIZE)-7;
@@ -135,25 +110,11 @@ class SHA512
             memset(WordArray, (uint8_t)'0', padding+len+17);
             for (int c=0;c<len;c++)
             {
-                WordArray[c] = ((ucharptr)msg.c_str())[c];
+                WordArray[c] = msg.c_str()[c];
             }
             WordArray[len] = (uint8_t)(1<<7); // append 10000000.
-
-            for (int c=padding+len+17;c>padding+len+1;c--)
-            {
-                // WordArray[c] = BE128((uint8_t*)bitlen, bitlen)[c];
-            }
-            
-            /* ====================== (WORD-ARRAY NOT DONE) ====================== */
-            
-            std::cout << WordArray;
-            // std::cout << std::endl << "128B128B128B128B128B"
-            //           << "8B128B128B128B128B128B128B128B128B128B128B128B128B128B"
-            //           << "128B128B128B128B128B128B128B128B128B128B128B128B128B12"
-            //           << std::endl;
-            std::cout << std::endl;
             // convert WordArray uint8 to uint64_t // THIS PART ISNT DONE
-            
+
             // pad W with zeros
             memset(W, (uint64_t)'0', 80);
             
@@ -163,13 +124,21 @@ class SHA512
                 W[c] = WordArray[c]; // adds them as 8 bit instead of 64.
             } // right now its adding only 16 of the message bytes in uint8_t
              // format. There is 128 message bytes.
-
-            /* ======================= (WORD NOT DONE) ======================== */
+            
+            // append length
+            auto [fst, snd] = to2_uint64(bitlen);
+            W[((padding+len+1)/8)+1] = fst;
+            W[((padding+len+1)/8)+2] = snd;
+            
+            for(int c=0;c<80;c++)
+            {
+                std::cout << W[c] << std::endl;
+            }
             
             // create message schedule
             for (int c=16;c<80;c++)
             {
-                // σ0 = (w[c−15] ≫≫ 1) ⊕ (w[c−15] ≫ ≫8) ⊕ (w[c−15] ≫ 7)
+                // σ0 = (w[c−15] ≫≫ 1) ⊕ (w[c−15] ≫≫ 8) ⊕ (w[c−15] ≫ 7)
                 
                 uint64_t s0 = Rotr(W[c-15],1) xor Rotr(W[c-15],8) xor Shr(W[c-15],7);
                 
@@ -188,7 +157,7 @@ class SHA512
                 V[c] = H[c];
             }
             
-            // transform blocks
+            // transform
             for (int c=0;c<80;c++)
             {
                 // Σ0 = (ac ≫≫ 28) ⊕ (ac ≫≫ 34) ⊕ (ac ≫≫ 39)
@@ -219,19 +188,19 @@ class SHA512
             for (int c=0;c<8;c++)
             {
                 H[c] += V[c];
-                std::cout << std::hex << H[c];
-                // hash length = wrong.
+                // std::cout << std::hex << H[c];
+            //     // hash length = wrong.
             }
-            std::cout << "\n\n" << "cf83e1357eefb8bdf1542850d66d8007d620e4050b57"
-                      << "15dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63"
-                      << "b931bd47417a81a538327af927da3e" << std::endl
-                      << "\t\t\t\t\t\t^ empty string hash value ^";
-        }
-        // return value
-        std::string sha512()
-        {
-            return NULL;
+            // std::cout << "\n\n" << "cf83e1357eefb8bdf1542850d66d8007d620e4050b57"
+            //           << "15dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63"
+            //           << "b931bd47417a81a538327af927da3e" << std::endl
+            //           << "\t\t\t\t\t\t^ empty string hash value ^";
         }
 };
+
+// std::string sha512(std::string msg)
+// {
+//     return SHA512(msg);
+// }
 
 #endif /* SHA512_H_ */
