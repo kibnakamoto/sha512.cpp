@@ -79,7 +79,6 @@ std::pair<uint64_t,uint64_t> to2_uint64(__uint128_t source)
 class SHA512
 {
     protected:
-        typedef uint8_t* ucharptr;
         static const unsigned int DIGEST_SIZE = 0x80; // 128 bits
         static const unsigned int BLOCK_SIZE = 1024; // in bits
         uint64_t W[80];
@@ -113,12 +112,12 @@ class SHA512
                 WordArray[c] = msg.c_str()[c];
             }
             WordArray[len] = (uint8_t)(1<<7); // append 10000000.
-            // convert WordArray uint8 to uint64_t // THIS PART ISNT DONE
-
+            
             // pad W with zeros
             memset(W, (uint64_t)'0', 80);
             
-            // WRONG. need to convert WArray to 64 bit array without more padding
+            // convert WordArray uint8 to uint64_t // THIS PART ISNT DONE
+            // add WordArray blocks to W array
             for (int c=0;c<(padding+len+17)/8;c++)
             {
                 W[c] = WordArray[c]; // adds them as 8 bit instead of 64.
@@ -142,13 +141,13 @@ class SHA512
                 
                 uint64_t s0 = Rotr(W[c-15],1) xor Rotr(W[c-15],8) xor Shr(W[c-15],7);
                 
-                // σ1 = (w[c−2]  ≫ ≫ 19) ⊕ (w[c−2]  ≫ ≫ 61) ⊕ (w[c−2]  ≫  6)
+                // σ1 = (w[c−2] ≫≫ 19) ⊕ (w[c−2] ≫≫ 61) ⊕ (w[c−2] ≫ 6)
                 
                 uint64_t s1 = Rotr(W[c-2],19) xor Rotr(W[c-2],61) xor Shr(W[c-2],6);
                 
                 // uint64_t does binary addition 2^64.
-                // w[c] = w[c−16] [+] σ0,c [+] w[c−7] [+] σ1,c
-                W[c] = (W[c-16] + s0 + W[c-7] + s1);
+                // w[c] = w[c−16] [+] σ0 [+] w[c−7] [+] σ1
+                W[c] = W[c-16] + s0 + W[c-7] + s1;
             }
             
             uint64_t V[8]; // initialize non-constant hash values
@@ -188,7 +187,7 @@ class SHA512
             for (int c=0;c<8;c++)
             {
                 H[c] += V[c];
-                // std::cout << std::hex << H[c];
+                std::cout << std::hex << H[c];
             //     // hash length = wrong.
             }
             // std::cout << "\n\n" << "cf83e1357eefb8bdf1542850d66d8007d620e4050b57"
