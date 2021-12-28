@@ -1,3 +1,4 @@
+
 /*
  *  github: kibnakamoto
  *   Created on: Dec. 5, 2021
@@ -12,6 +13,7 @@
 #include <cstring>
 #include <stdint.h>
 
+// 80 64 bit unsigned constants for sha512 algorithm
 const uint64_t K[80] =
 {
     0x428a2f98d728ae22ULL, 0x7137449123ef65cdULL,
@@ -64,12 +66,13 @@ const uint64_t K[80] =
 #define Maj(x,y,z) ((x & y)^(x & z)^(y & z))
 
 // binary operators
-#define Shr(x,n) (x >> n)
-#define Shl(x,n) (x << n)
-#define Rotr(x,n) ((x >> n)|(x << (sizeof(x)<<3)-n))
+#define Shr(x, n) (x >> n)
+#define Shl(x, n) (x << n)
+#define Rotr(x, n) ( (x >> n)|(x << (sizeof(x)<<3)-n) )
+#define Rotl(x, n) ( (x << n)|(x >> (sizeof(x)<<3)-n) )
 
 // length which is __uint128_t in 2 uint64_t integers
-std::pair<uint64_t,uint64_t> to2_uint64(__uint128_t source)
+inline std::pair<uint64_t,uint64_t> to2_uint64(__uint128_t source)
 {
     constexpr const __uint128_t bottom_mask = Shl(__uint128_t{1}, 64) - 1;
     constexpr const __uint128_t top_mask = ~bottom_mask;
@@ -100,39 +103,60 @@ class SHA512
             __uint128_t bitlen = Shl(len, 3);
             
             // padding with zeros
-            unsigned int padding = ((BLOCK_SIZE - (bitlen+1) - 128) % BLOCK_SIZE)-7;
+            unsigned int padding = ((BLOCK_SIZE - (bitlen+1) - 128)
+                                    % BLOCK_SIZE)-7;
             padding /= 8; // in bytes.
             
             // required b/c that adds random value to the end of WordArray
-            int n_pad = len < 128 ? n_pad = padding+len+16 : n_pad = padding+len+17;
+            int n_pad = len < 128 ? n_pad = padding+len+16 : n_pad = padding +
+                                                                     len+17;
             uint8_t WordArray[n_pad];
-            memset(WordArray, (uint8_t)'0', padding+len+17);
+            int blockBytesLen = padding+len+17;
+            memset(WordArray, (uint8_t)'0', blockBytesLen);
             for (int c=0;c<len;c++)
             {
                 WordArray[c] = msg.c_str()[c];
             }
-            WordArray[len] = (uint8_t)(1<<7); // append 10000000.
+            WordArray[len] = (uint8_t)Shl(1, 7); // append 10000000.
             
             // pad W with zeros
             memset(W, (uint64_t)'0', 80);
             
-            // convert WordArray uint8 to uint64_t // THIS PART ISNT DONE
+            /*=================== ERROR HERE ===================*/
+            
+            // TODO: convert WordArray uint8 to uint64_t
             // add WordArray blocks to W array
-            for (int c=0;c<(padding+len+17)/8;c++)
+            uint64_t Word64[(blockBytesLen)/8];
+            memset(Word64, (uint64_t)'0', (blockBytesLen)/8);
+            uint64_t tmp[blockBytesLen];
+            uint64_t _8tmp;
+            for (int c=0;c<blockBytesLen;c++)
             {
-                W[c] = WordArray[c]; // adds them as 8 bit instead of 64.
-            } // right now its adding only 16 of the message bytes in uint8_t
-             // format. There is 128 message bytes.
+                tmp[c] = (uint64_t)WordArray[c];
+                tmp[c] = Shl(tmp[c], 56);
+                // std::cout << "tmp(7shft):"<<std::hex<<tmp[c] << std::endl;
+                _8tmp = ;
+                for(int i=0;i<(blockBytesLen)/8;i++)
+                {
+                    Word64[i] = _8tmp;
+                }
+            }
+            for (int c=0;c<(blockBytesLen)/8;c++)
+            {
+                W[c] = tmp[c];
+            }
             
             // append length
             auto [fst, snd] = to2_uint64(bitlen);
             W[((padding+len+1)/8)+1] = fst;
             W[((padding+len+1)/8)+2] = snd;
             
-            for(int c=0;c<80;c++)
+            for (int c=0;c<80;c++)
             {
-                std::cout << W[c] << std::endl;
+                std::cout << "W["<<c<<"]: " << std::hex << W[c] << std::endl;
             }
+            
+            /* ====================== error ends here ====================== */
             
             // create message schedule
             for (int c=16;c<80;c++)
@@ -184,22 +208,18 @@ class SHA512
             }
             
             // final values
+            std::cout << std::endl << std::endl << std::endl << std::endl;
             for (int c=0;c<8;c++)
             {
                 H[c] += V[c];
                 std::cout << std::hex << H[c];
-            //     // hash length = wrong.
+                // hash length = correct for now.
             }
-            // std::cout << "\n\n" << "cf83e1357eefb8bdf1542850d66d8007d620e4050b57"
-            //           << "15dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63"
-            //           << "b931bd47417a81a538327af927da3e" << std::endl
-            //           << "\t\t\t\t\t\t^ empty string hash value ^";
+            std::cout << "\n\n" << "cf83e1357eefb8bdf1542850d66d8007d620e4050b57"
+                      << "15dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63"
+                      << "b931bd47417a81a538327af927da3e" << std::endl
+                      << "\t\t\t\t\t\t^ empty string hash value ^";
         }
 };
-
-// std::string sha512(std::string msg)
-// {
-//     return SHA512(msg);
-// }
 
 #endif /* SHA512_H_ */
