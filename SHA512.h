@@ -71,12 +71,21 @@ const uint64_t K[80] =
 #define Rotr(x, n) ( (x >> n)|(x << (sizeof(x)<<3)-n) )
 
 // 8 bit array values to 64 bit array using 64 bit integer pointer.
-inline uint64_t* _8to64(uint64_t* tmp)
+inline uint64_t* _8to64(uint64_t* tmp, int tmplen)
 {
     char c=0;
-    uint64_t *w = (uint64_t*)(tmp[c+7] | Shl(tmp[c+6], 8) | Shl(tmp[c+5], 16) | \
-              Shl(tmp[c+4], 24) | Shl(tmp[c+3], 32) | Shl(tmp[c+2], 40) | \
-              Shl(tmp[c+1], 48) | Shl(tmp[c+0], 56));
+    uint64_t *w;
+    for (int i=0;i<tmplen;i++)
+    {
+        if (tmp[i] != 0x30)
+        {
+            *w = (uint64_t)(tmp[c+7] | Shl(tmp[c+6], 8) | Shl(tmp[c+5], 16) | \
+                             Shl(tmp[c+4], 24) | Shl(tmp[c+3], 32) | \
+                             Shl(tmp[c+2], 40) | Shl(tmp[c+1], 48) | Shl(tmp[c+0], 56));
+        } else {
+            w[i] = 0x3030303030303030;
+        }
+    }
     return w;
 }
 
@@ -91,8 +100,6 @@ inline std::pair<uint64_t,uint64_t> to2_uint64(__uint128_t source)
 class SHA512
 {
     protected:
-        static const unsigned int DIGEST_SIZE = 0x80; // 128 bits
-        static const unsigned int BLOCK_SIZE = 1024; // in bits
         uint64_t W[80];
         uint64_t H[8] = {
             0x6a09e667f3bcc908ULL, 0xbb67ae8584caa73bULL,
@@ -112,8 +119,8 @@ class SHA512
             __uint128_t bitlen = Shl(len, 3);
             
             // padding with zeros
-            unsigned int padding = ((BLOCK_SIZE - (bitlen+1) - 128) \
-                                    % BLOCK_SIZE)-7;
+            unsigned int padding = ((1024 - (bitlen+1) - 128) \
+                                    % 1024)-7;
             padding /= 8; // in bytes.
             
             // required b/c that adds random value to the end of WordArray
@@ -131,25 +138,24 @@ class SHA512
             // pad W with zeros
             memset(W, (uint64_t)'0', 80);
             
-            /*=================== ERROR STARTS HERE ===================*/
+            /* =================== ERROR STARTS HERE =================== */
             
-            // TODO: convert WordArray uint8 to uint64_t
-            // add WordArray blocks to W array
-            uint64_t Word64[(blockBytesLen)/8];
-            memset(Word64, (uint64_t)'0', (blockBytesLen)/8);
+            // add WordArray to W array
+            uint64_t Word64[blockBytesLen/8];
+            memset(Word64, (uint64_t)'0', blockBytesLen/8);
             uint64_t tmp[blockBytesLen];
             for (int c=0;c<blockBytesLen;c++)
             {
                 tmp[c] = (uint64_t)WordArray[c];
             }
-            std::cout << "_8to64:"<<_8to64(tmp) << std::endl;
+            std::cout << "_8to64: "<<_8to64(tmp, blockBytesLen)[0] << std::endl;
             for (int c=0;c<(blockBytesLen)/8;c++)
             {
-                Word64[c] = (uint64_t)_8to64(tmp);
+                Word64[0] = _8to64(tmp, blockBytesLen)[0];
                 W[c] = Word64[c];
             }
             
-            /* ====================== error ends here ====================== */
+            /* ====================== ERROR ENDS HERE ====================== */
             
             // append 128 bit length as 2 uint64_t's as a big endian
             auto [fst, snd] = to2_uint64(bitlen);
