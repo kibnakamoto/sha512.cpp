@@ -69,12 +69,15 @@ const uint64_t K[80] =
 #define Shr(x, n) (x >> n)
 #define Shl(x, n) (x << n)
 #define Rotr(x, n) ( (x >> n)|(x << (sizeof(x)<<3)-n) )
-#define Rotl(x, n) ( (x << n)|(x >> (sizeof(x)<<3)-n) )
 
-#define _8to64() \
-{                               \
-                                \
-                                \
+// 8 bit array values to 64 bit array using 64 bit integer pointer.
+inline uint64_t* _8to64(uint64_t* tmp)
+{
+    char c=0;
+    uint64_t *w = (uint64_t*)(tmp[c+7] | Shl(tmp[c+6], 8) | Shl(tmp[c+5], 16) | \
+              Shl(tmp[c+4], 24) | Shl(tmp[c+3], 32) | Shl(tmp[c+2], 40) | \
+              Shl(tmp[c+1], 48) | Shl(tmp[c+0], 56));
+    return w;
 }
 
 // length which is __uint128_t in 2 uint64_t integers
@@ -128,7 +131,7 @@ class SHA512
             // pad W with zeros
             memset(W, (uint64_t)'0', 80);
             
-            /*=================== ERROR HERE ===================*/
+            /*=================== ERROR STARTS HERE ===================*/
             
             // TODO: convert WordArray uint8 to uint64_t
             // add WordArray blocks to W array
@@ -139,17 +142,10 @@ class SHA512
             {
                 tmp[c] = (uint64_t)WordArray[c];
             }
-            int c=0;
-            tmp[c] =  tmp[c+7] | Shl(tmp[c+6], 8) | Shl(tmp[c+5], 16) | \
-                      Shl(tmp[c+4], 24) | Shl(tmp[c+3], 32) | Shl(tmp[c+2], 40) | \
-                      Shl(tmp[c+1], 48) | Shl(tmp[c+0], 56);
-            // tmp[c] = tmp[c];
-                
-                std::cout << "_8to64:"<<std::hex<<tmp[c] << std::endl;
-            // }
-            // std::cout << std::hex << Word64[0];
+            std::cout << "_8to64:"<<_8to64(tmp) << std::endl;
             for (int c=0;c<(blockBytesLen)/8;c++)
             {
+                Word64[c] = (uint64_t)_8to64(tmp);
                 W[c] = Word64[c];
             }
             
