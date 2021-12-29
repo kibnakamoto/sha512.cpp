@@ -71,6 +71,12 @@ const uint64_t K[80] =
 #define Rotr(x, n) ( (x >> n)|(x << (sizeof(x)<<3)-n) )
 #define Rotl(x, n) ( (x << n)|(x >> (sizeof(x)<<3)-n) )
 
+#define _8to64() \
+{                               \
+                                \
+                                \
+}
+
 // length which is __uint128_t in 2 uint64_t integers
 inline std::pair<uint64_t,uint64_t> to2_uint64(__uint128_t source)
 {
@@ -103,12 +109,12 @@ class SHA512
             __uint128_t bitlen = Shl(len, 3);
             
             // padding with zeros
-            unsigned int padding = ((BLOCK_SIZE - (bitlen+1) - 128)
+            unsigned int padding = ((BLOCK_SIZE - (bitlen+1) - 128) \
                                     % BLOCK_SIZE)-7;
             padding /= 8; // in bytes.
             
             // required b/c that adds random value to the end of WordArray
-            int n_pad = len < 128 ? n_pad = padding+len+16 : n_pad = padding +
+            int n_pad = len < 128 ? n_pad = padding+len+16 : n_pad = padding + \
                                                                      len+17;
             uint8_t WordArray[n_pad];
             int blockBytesLen = padding+len+17;
@@ -129,34 +135,36 @@ class SHA512
             uint64_t Word64[(blockBytesLen)/8];
             memset(Word64, (uint64_t)'0', (blockBytesLen)/8);
             uint64_t tmp[blockBytesLen];
-            uint64_t _8tmp;
             for (int c=0;c<blockBytesLen;c++)
             {
                 tmp[c] = (uint64_t)WordArray[c];
-                tmp[c] = Shl(tmp[c], 56);
-                // std::cout << "tmp(7shft):"<<std::hex<<tmp[c] << std::endl;
-                _8tmp = ;
-                for(int i=0;i<(blockBytesLen)/8;i++)
-                {
-                    Word64[i] = _8tmp;
-                }
             }
+            int c=0;
+            tmp[c] =  tmp[c+7] | Shl(tmp[c+6], 8) | Shl(tmp[c+5], 16) | \
+                      Shl(tmp[c+4], 24) | Shl(tmp[c+3], 32) | Shl(tmp[c+2], 40) | \
+                      Shl(tmp[c+1], 48) | Shl(tmp[c+0], 56);
+            // tmp[c] = tmp[c];
+                
+                std::cout << "_8to64:"<<std::hex<<tmp[c] << std::endl;
+            // }
+            // std::cout << std::hex << Word64[0];
             for (int c=0;c<(blockBytesLen)/8;c++)
             {
-                W[c] = tmp[c];
+                W[c] = Word64[c];
             }
             
-            // append length
+            /* ====================== error ends here ====================== */
+            
+            // append 128 bit length as 2 uint64_t's as a big endian
             auto [fst, snd] = to2_uint64(bitlen);
             W[((padding+len+1)/8)+1] = fst;
             W[((padding+len+1)/8)+2] = snd;
             
             for (int c=0;c<80;c++)
             {
-                std::cout << "W["<<c<<"]: " << std::hex << W[c] << std::endl;
+                // std::cout << "W["<<std::dec<<c<<"]: " << std::hex << W[c]
+                //           << std::endl;
             }
-            
-            /* ====================== error ends here ====================== */
             
             // create message schedule
             for (int c=16;c<80;c++)
@@ -185,7 +193,7 @@ class SHA512
             {
                 // Σ0 = (ac ≫≫ 28) ⊕ (ac ≫≫ 34) ⊕ (ac ≫≫ 39)
                 
-                uint64_t S0 = Rotr(V[c], 28) xor Rotr(V[c], 34) xor Rotr(V[c], 22);
+                uint64_t S0 = Rotr(V[0], 28) xor Rotr(V[0], 34) xor Rotr(V[0], 22);
                 
                 // t2 = Σ0,[c] + Maj[c]
                 uint64_t temp2 = S0 + Maj(V[0], V[1], V[2]);
@@ -213,7 +221,6 @@ class SHA512
             {
                 H[c] += V[c];
                 std::cout << std::hex << H[c];
-                // hash length = correct for now.
             }
             std::cout << "\n\n" << "cf83e1357eefb8bdf1542850d66d8007d620e4050b57"
                       << "15dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63"
