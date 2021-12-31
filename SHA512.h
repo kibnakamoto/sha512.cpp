@@ -1,4 +1,3 @@
-
 /*
  *  github: kibnakamoto
  *   Created on: Dec. 5, 2021
@@ -59,40 +58,19 @@ const uint64_t K[80] =
 };
 
 // choice = (x ∧ y) ⊕ (¯x ∧ z)
-
 #define Ch(x,y,z) ((x bitand y)xor(~x bitand z))
-// majority = (x ∧ y) ⊕ (x ∧ z) ⊕ (y ∧ z)
 
+// majority = (x ∧ y) ⊕ (x ∧ z) ⊕ (y ∧ z)
 #define Maj(x,y,z) ((x & y)^(x & z)^(y & z))
 
 // binary operators
 #define Shr(x, n) (x >> n)
-#define Shl(x, n) (x << n)
 #define Rotr(x, n) ( (x >> n)|(x << (sizeof(x)<<3)-n) )
-
-// 8 bit array values to 64 bit array using 64 bit integer pointer.
-inline uint64_t* _8to64(uint64_t* tmp, int tmplen)
-{
-    char c=0;
-    uint64_t *w;
-    for (int i=0;i<tmplen;i++)
-    {
-        if (tmp[i] != 0x30)
-        {
-            *w = (uint64_t)(tmp[c+7] | Shl(tmp[c+6], 8) | Shl(tmp[c+5], 16) | \
-                             Shl(tmp[c+4], 24) | Shl(tmp[c+3], 32) | \
-                             Shl(tmp[c+2], 40) | Shl(tmp[c+1], 48) | Shl(tmp[c+0], 56));
-        } else {
-            w[i] = 0x3030303030303030;
-        }
-    }
-    return w;
-}
 
 // length which is __uint128_t in 2 uint64_t integers
 inline std::pair<uint64_t,uint64_t> to2_uint64(__uint128_t source)
 {
-    constexpr const __uint128_t bottom_mask = Shl(__uint128_t{1}, 64) - 1;
+    constexpr const __uint128_t bottom_mask = (__uint128_t{1} << 64) - 1;
     constexpr const __uint128_t top_mask = ~bottom_mask;
     return {source bitand bottom_mask, Shr((source bitand top_mask), 64)};
 }
@@ -114,18 +92,17 @@ class SHA512
         {
         	// length in bytes.
             __uint128_t len = msg.length();
-            
+
             // length is represented by a 128 bit unsigned integer
-            __uint128_t bitlen = Shl(len, 3);
+            __uint128_t bitlen = len << 3;
             
             // padding with zeros
-            unsigned int padding = ((1024 - (bitlen+1) - 128) \
-                                    % 1024)-7;
+            unsigned int padding = ((1024-(bitlen+1)-128) % 1024)-7;
             padding /= 8; // in bytes.
-            
+            std::cout << padding;
             // required b/c that adds random value to the end of WordArray
-            int n_pad = len < 128 ? n_pad = padding+len+16 : n_pad = padding + \
-                                                                     len+17;
+            unsigned int n_pad = len < 128 ? n_pad = padding+len+16 :
+                                 n_pad = padding+len+17;
             uint8_t WordArray[n_pad];
             int blockBytesLen = padding+len+17;
             memset(WordArray, (uint8_t)'0', blockBytesLen);
@@ -133,34 +110,28 @@ class SHA512
             {
                 WordArray[c] = msg.c_str()[c];
             }
-            WordArray[len] = (uint8_t)Shl(1, 7); // append 10000000.
+            WordArray[len] = (uint8_t)0x80; // append 10000000.
             
             // pad W with zeros
             memset(W, (uint64_t)'0', 80);
             
-            /* =================== ERROR STARTS HERE =================== */
-            
+            /* ===================== ERROR STARTS HERE ===================== */
             // add WordArray to W array
-            uint64_t Word64[blockBytesLen/8];
-            memset(Word64, (uint64_t)'0', blockBytesLen/8);
-            uint64_t tmp[blockBytesLen];
-            for (int c=0;c<blockBytesLen;c++)
+            // 8 bit array values to 64 bit array using 64 bit integer pointer.
+            for (int i=0;i<=len;i++)
             {
-                tmp[c] = (uint64_t)WordArray[c];
-            }
-            std::cout << "_8to64: "<<_8to64(tmp, blockBytesLen)[0] << std::endl;
-            for (int c=0;c<(blockBytesLen)/8;c++)
-            {
-                Word64[0] = _8to64(tmp, blockBytesLen)[0];
-                W[c] = Word64[c];
+                W[i] = (uint64_t)((WordArray[i<<3]<<8)-1);
+                for (int j=0;j<=6;j++)
+                    W[i] = W[i]|( (uint64_t)(WordArray[i<<8+j]<<(7-j)) );
+                W[i] = W[i]|( (uint64_t)WordArray[i<<8+7] );
             }
             
             /* ====================== ERROR ENDS HERE ====================== */
             
             // append 128 bit length as 2 uint64_t's as a big endian
             auto [fst, snd] = to2_uint64(bitlen);
-            W[((padding+len+1)/8)+1] = fst;
-            W[((padding+len+1)/8)+2] = snd;
+            W[Shr(padding+len+1,3)+1] = fst;
+            W[Shr(padding+len+1,3)+2] = snd;
             
             for (int c=0;c<80;c++)
             {
@@ -172,11 +143,9 @@ class SHA512
             for (int c=16;c<80;c++)
             {
                 // σ0 = (w[c−15] ≫≫ 1) ⊕ (w[c−15] ≫≫ 8) ⊕ (w[c−15] ≫ 7)
-                
                 uint64_t s0 = Rotr(W[c-15],1) xor Rotr(W[c-15],8) xor Shr(W[c-15],7);
                 
-                // σ1 = (w[c−2] ≫≫ 19) ⊕ (w[c−2] ≫≫ 61) ⊕ (w[c−2] ≫ 6)
-                
+                // σ1 = (w[c−2] ≫≫ 19) ⊕ (w[c−2] ≫≫ 61) ⊕ (w[c−2] ≫ 6)                
                 uint64_t s1 = Rotr(W[c-2],19) xor Rotr(W[c-2],61) xor Shr(W[c-2],6);
                 
                 // uint64_t does binary addition 2^64.
@@ -191,19 +160,16 @@ class SHA512
             }
             
             // transform
+            // Σ0 = (ac ≫≫ 28) ⊕ (ac ≫≫ 34) ⊕ (ac ≫≫ 39)
+            uint64_t S0 = Rotr(V[0], 28) xor Rotr(V[0], 34) xor Rotr(V[0], 22);
+            
+            // t2 = Σ0 + Maj
+            uint64_t temp2 = S0 + Maj(V[0], V[1], V[2]);
+            
+            // Σ1 = (e ≫≫ 14) ⊕ (e ≫≫ 18) ⊕ (e ≫≫ 41)
+            uint64_t S1 = Rotr(V[4], 14) xor Rotr(V[4], 18) xor Rotr(V[4], 41);
             for (int c=0;c<80;c++)
             {
-                // Σ0 = (ac ≫≫ 28) ⊕ (ac ≫≫ 34) ⊕ (ac ≫≫ 39)
-                
-                uint64_t S0 = Rotr(V[0], 28) xor Rotr(V[0], 34) xor Rotr(V[0], 22);
-                
-                // t2 = Σ0,[c] + Maj[c]
-                uint64_t temp2 = S0 + Maj(V[0], V[1], V[2]);
-                
-                // Σ1 = (e ≫≫ 14) ⊕ (e ≫≫ 18) ⊕ (e ≫≫ 41)
-                
-                uint64_t S1 = Rotr(V[4], 14) xor Rotr(V[4], 18) xor Rotr(V[4], 41);
-                
                 // t1 = h + Σ1 + Ch[e,f,g] + K[c] + W[c]
                 uint64_t temp1 = V[7] + S1 + Ch(V[4], V[5], V[6]) + K[c] + W[c];
                 
@@ -224,9 +190,9 @@ class SHA512
                 H[c] += V[c];
                 std::cout << std::hex << H[c];
             }
-            std::cout << "\n\n" << "cf83e1357eefb8bdf1542850d66d8007d620e4050b57"
-                      << "15dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63"
-                      << "b931bd47417a81a538327af927da3e" << std::endl
+            std::cout << "\n\n" << "cf83e1357eefb8bdf1542850d66d8007d620e4050b5"
+                      << "715dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f"
+                      << "63b931bd47417a81a538327af927da3e" << std::endl
                       << "\t\t\t\t\t\t^ empty string hash value ^";
         }
 };
