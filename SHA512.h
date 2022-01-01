@@ -59,7 +59,6 @@ const uint64_t K[80] =
 
 // choice = (x ∧ y) ⊕ (¯x ∧ z)
 #define Ch(x,y,z) ((x bitand y)xor(~x bitand z))
-
 // majority = (x ∧ y) ⊕ (x ∧ z) ⊕ (y ∧ z)
 #define Maj(x,y,z) ((x & y)^(x & z)^(y & z))
 
@@ -73,6 +72,18 @@ inline std::pair<uint64_t,uint64_t> to2_uint64(__uint128_t source)
     constexpr const __uint128_t bottom_mask = (__uint128_t{1} << 64) - 1;
     constexpr const __uint128_t top_mask = ~bottom_mask;
     return {source bitand bottom_mask, Shr((source bitand top_mask), 64)};
+}
+
+// Oputputs 128 bit number
+std::ostream& operator << (std::ostream &out, __int128_t  x) {
+    std::string s;
+    while (x > 0) {
+        s.push_back(x % 10 + '0');
+        x /= 10;
+    }
+    reverse(s.begin(), s.end());
+    out << s;
+    return out;
 }
 
 class SHA512
@@ -99,13 +110,13 @@ class SHA512
             // padding with zeros
             unsigned int padding = ((1024-(bitlen+1)-128) % 1024)-7;
             padding /= 8; // in bytes.
-            std::cout << padding;
+
             // required b/c that adds random value to the end of WordArray
             unsigned int n_pad = len < 128 ? n_pad = padding+len+16 :
-                                 n_pad = padding+len+17;
+                                             n_pad = padding+len+17;
             uint8_t WordArray[n_pad];
             int blockBytesLen = padding+len+17;
-            memset(WordArray, (uint8_t)'0', blockBytesLen);
+            memset(WordArray, 0, blockBytesLen);
             for (int c=0;c<len;c++)
             {
                 WordArray[c] = msg.c_str()[c];
@@ -113,17 +124,20 @@ class SHA512
             WordArray[len] = (uint8_t)0x80; // append 10000000.
             
             // pad W with zeros
-            memset(W, (uint64_t)'0', 80);
+            for (int i=0; i<80; i++) {
+                W[i] = 0; 
+            }
             
             /* ===================== ERROR STARTS HERE ===================== */
             // add WordArray to W array
             // 8 bit array values to 64 bit array using 64 bit integer pointer.
-            for (int i=0;i<=len;i++)
-            {
-                W[i] = (uint64_t)((WordArray[i<<3]<<8)-1);
-                for (int j=0;j<=6;j++)
-                    W[i] = W[i]|( (uint64_t)(WordArray[i<<8+j]<<(7-j)) );
-                W[i] = W[i]|( (uint64_t)WordArray[i<<8+7] );
+            for (int i=0; i<len/8+1; i++){
+                W[i] = (uint64_t)WordArray[i*8]<<56;
+                for (int j=1; j<=6; j++)
+                    W[i] = W[i]|( (uint64_t)WordArray[i*8+j]<<(7-j)*8);
+                W[i] = W[i]|( (uint64_t)WordArray[i*8+7] );
+            
+                std::cout << "W["<<i<<"]="<<std::hex << W[i]<<std::endl;
             }
             
             /* ====================== ERROR ENDS HERE ====================== */
@@ -145,7 +159,7 @@ class SHA512
                 // σ0 = (w[c−15] ≫≫ 1) ⊕ (w[c−15] ≫≫ 8) ⊕ (w[c−15] ≫ 7)
                 uint64_t s0 = Rotr(W[c-15],1) xor Rotr(W[c-15],8) xor Shr(W[c-15],7);
                 
-                // σ1 = (w[c−2] ≫≫ 19) ⊕ (w[c−2] ≫≫ 61) ⊕ (w[c−2] ≫ 6)                
+                // σ1 = (w[c−2] ≫≫ 19) ⊕ (w[c−2] ≫≫ 61) ⊕ (w[c−2] ≫ 6)
                 uint64_t s1 = Rotr(W[c-2],19) xor Rotr(W[c-2],61) xor Shr(W[c-2],6);
                 
                 // uint64_t does binary addition 2^64.
