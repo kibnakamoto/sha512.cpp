@@ -74,18 +74,6 @@ inline std::pair<uint64_t,uint64_t> to2_uint64(__uint128_t source)
     return {source bitand bottom_mask, Shr((source bitand top_mask), 64)};
 }
 
-// Oputputs 128 bit number
-std::ostream& operator << (std::ostream &out, __int128_t  x) {
-    std::string s;
-    while (x > 0) {
-        s.push_back(x % 10 + '0');
-        x /= 10;
-    }
-    reverse(s.begin(), s.end());
-    out << s;
-    return out;
-}
-
 class SHA512
 {
     protected:
@@ -110,34 +98,27 @@ class SHA512
             // padding with zeros
             unsigned int padding = ((1024-(bitlen+1)-128) % 1024)-7;
             padding /= 8; // in bytes.
-
-            // required b/c that adds random value to the end of WordArray
-            unsigned int n_pad = len < 128 ? n_pad = padding+len+16 :
-                                             n_pad = padding+len+17;
-            uint8_t WordArray[n_pad];
             int blockBytesLen = padding+len+17;
+            uint8_t WordArray[blockBytesLen];
             memset(WordArray, 0, blockBytesLen);
-            for (int c=0;c<len;c++)
-            {
+            for (int c=0;c<len;c++) {
                 WordArray[c] = msg.c_str()[c];
             }
             WordArray[len] = (uint8_t)0x80; // append 10000000.
             
             // pad W with zeros
             for (int i=0; i<80; i++) {
-                W[i] = 0; 
+                W[i] = 0x00; 
             }
             
             /* ===================== ERROR STARTS HERE ===================== */
             // add WordArray to W array
             // 8 bit array values to 64 bit array using 64 bit integer pointer.
-            for (int i=0; i<len/8+1; i++){
+            for (int i=0; i<len/8+1; i++) {
                 W[i] = (uint64_t)WordArray[i*8]<<56;
                 for (int j=1; j<=6; j++)
                     W[i] = W[i]|( (uint64_t)WordArray[i*8+j]<<(7-j)*8);
                 W[i] = W[i]|( (uint64_t)WordArray[i*8+7] );
-            
-                std::cout << "W["<<i<<"]="<<std::hex << W[i]<<std::endl;
             }
             
             /* ====================== ERROR ENDS HERE ====================== */
@@ -146,11 +127,12 @@ class SHA512
             auto [fst, snd] = to2_uint64(bitlen);
             W[Shr(padding+len+1,3)+1] = fst;
             W[Shr(padding+len+1,3)+2] = snd;
-            
+            std::cout << "append length index: " << (uint64_t)(padding+len+1)/8+1 << std::endl;
+            std::cout << snd << std::endl;
             for (int c=0;c<80;c++)
             {
-                // std::cout << "W["<<std::dec<<c<<"]: " << std::hex << W[c]
-                //           << std::endl;
+                std::cout << "W["<<std::dec<<c<<"]: " << std::hex << W[c]
+                          << std::endl;
             }
             
             // create message schedule
@@ -167,23 +149,24 @@ class SHA512
                 W[c] = W[c-16] + s0 + W[c-7] + s1;
             }
             
-            uint64_t V[8]; // initialize non-constant hash values
+            uint64_t V[8]; // initialize hash values
             for(int c=0;c<8;c++)
             {
                 V[c] = H[c];
             }
             
             // transform
-            // Σ0 = (ac ≫≫ 28) ⊕ (ac ≫≫ 34) ⊕ (ac ≫≫ 39)
-            uint64_t S0 = Rotr(V[0], 28) xor Rotr(V[0], 34) xor Rotr(V[0], 22);
-            
-            // t2 = Σ0 + Maj
-            uint64_t temp2 = S0 + Maj(V[0], V[1], V[2]);
-            
-            // Σ1 = (e ≫≫ 14) ⊕ (e ≫≫ 18) ⊕ (e ≫≫ 41)
-            uint64_t S1 = Rotr(V[4], 14) xor Rotr(V[4], 18) xor Rotr(V[4], 41);
             for (int c=0;c<80;c++)
             {
+                // Σ0 = (ac ≫≫ 28) ⊕ (ac ≫≫ 34) ⊕ (ac ≫≫ 39)
+                uint64_t S0 = Rotr(V[0], 28) xor Rotr(V[0], 34) xor Rotr(V[0], 22);
+                
+                // t2 = Σ0 + Maj
+                uint64_t temp2 = S0 + Maj(V[0], V[1], V[2]);
+                
+                // Σ1 = (e ≫≫ 14) ⊕ (e ≫≫ 18) ⊕ (e ≫≫ 41)
+                uint64_t S1 = Rotr(V[4], 14) xor Rotr(V[4], 18) xor Rotr(V[4], 41);
+
                 // t1 = h + Σ1 + Ch[e,f,g] + K[c] + W[c]
                 uint64_t temp1 = V[7] + S1 + Ch(V[4], V[5], V[6]) + K[c] + W[c];
                 
