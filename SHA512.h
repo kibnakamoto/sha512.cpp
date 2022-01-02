@@ -1,7 +1,7 @@
 /*
  *  github: kibnakamoto
  *   Created on: Dec. 5, 2021
- *      Author: kibarekmek(TC)
+ *      Author: Taha Canturk
  */
 
 #ifndef SHA512_H_
@@ -59,16 +59,15 @@ const uint64_t K[80] =
 
 // choice = (x ∧ y) ⊕ (¯x ∧ z)
 #define Ch(x,y,z) ((x bitand y)xor(~x bitand z))
-// majority = (x ∧ y) ⊕ (x ∧ z) ⊕ (y ∧ z)
+// // majority = (x ∧ y) ⊕ (x ∧ z) ⊕ (y ∧ z)
 #define Maj(x,y,z) ((x & y)^(x & z)^(y & z))
 
-// binary operators
+// // binary operators
 #define Shr(x, n) (x >> n)
 #define Rotr(x, n) ( (x >> n)|(x << (sizeof(x)<<3)-n) )
 
 // length which is __uint128_t in 2 uint64_t integers
-inline std::pair<uint64_t,uint64_t> to2_uint64(__uint128_t source)
-{
+inline std::pair<uint64_t,uint64_t> to2_uint64(__uint128_t source) {
     constexpr const __uint128_t bottom_mask = (__uint128_t{1} << 64) - 1;
     constexpr const __uint128_t top_mask = ~bottom_mask;
     return {source bitand bottom_mask, Shr((source bitand top_mask), 64)};
@@ -91,7 +90,7 @@ class SHA512
         {
         	// length in bytes.
             __uint128_t len = msg.length();
-
+            
             // length is represented by a 128 bit unsigned integer
             __uint128_t bitlen = len << 3;
             
@@ -111,7 +110,6 @@ class SHA512
                 W[i] = 0x00; 
             }
             
-            /* ===================== ERROR STARTS HERE ===================== */
             // add WordArray to W array
             // 8 bit array values to 64 bit array using 64 bit integer pointer.
             for (int i=0; i<len/8+1; i++) {
@@ -121,19 +119,10 @@ class SHA512
                 W[i] = W[i]|( (uint64_t)WordArray[i*8+7] );
             }
             
-            /* ====================== ERROR ENDS HERE ====================== */
-            
             // append 128 bit length as 2 uint64_t's as a big endian
             auto [fst, snd] = to2_uint64(bitlen);
             W[Shr(padding+len+1,3)+1] = fst;
             W[Shr(padding+len+1,3)+2] = snd;
-            std::cout << "append length index: " << (uint64_t)(padding+len+1)/8+1 << std::endl;
-            std::cout << snd << std::endl;
-            for (int c=0;c<80;c++)
-            {
-                std::cout << "W["<<std::dec<<c<<"]: " << std::hex << W[c]
-                          << std::endl;
-            }
             
             // create message schedule
             for (int c=16;c<80;c++)
@@ -148,26 +137,22 @@ class SHA512
                 // w[c] = w[c−16] [+] σ0 [+] w[c−7] [+] σ1
                 W[c] = W[c-16] + s0 + W[c-7] + s1;
             }
-            
             uint64_t V[8]; // initialize hash values
-            for(int c=0;c<8;c++)
-            {
-                V[c] = H[c];
-            }
+            memcpy(V, H, sizeof(uint64_t)*8);
             
             // transform
             for (int c=0;c<80;c++)
             {
                 // Σ0 = (ac ≫≫ 28) ⊕ (ac ≫≫ 34) ⊕ (ac ≫≫ 39)
-                uint64_t S0 = Rotr(V[0], 28) xor Rotr(V[0], 34) xor Rotr(V[0], 22);
+                uint64_t S0 = Rotr(V[0], 28) xor Rotr(V[0], 34) xor Rotr(V[0], 39);
                 
-                // t2 = Σ0 + Maj
+                // T2 = Σ0 + Maj
                 uint64_t temp2 = S0 + Maj(V[0], V[1], V[2]);
                 
                 // Σ1 = (e ≫≫ 14) ⊕ (e ≫≫ 18) ⊕ (e ≫≫ 41)
                 uint64_t S1 = Rotr(V[4], 14) xor Rotr(V[4], 18) xor Rotr(V[4], 41);
-
-                // t1 = h + Σ1 + Ch[e,f,g] + K[c] + W[c]
+                
+                // T1 = h + Σ1 + Ch[e,f,g] + K[c] + W[c]
                 uint64_t temp1 = V[7] + S1 + Ch(V[4], V[5], V[6]) + K[c] + W[c];
                 
                 // modify hash values
@@ -178,7 +163,29 @@ class SHA512
                 V[3] = V[2];
                 V[2] = V[1];
                 V[0] = temp1 + temp2;
+                
+                /* ================== per-iteration values ================== */
+                std::cout << "iteration round: " << std::dec << c << std::endl;
+                std::cout << "[0]: " << std::hex << V[0] << std::endl;
+                std::cout << "[1]: " << std::hex << V[1] << std::endl;
+                std::cout << "[2]: " << std::hex << V[2] << std::endl;
+                std::cout << "[3]: " << std::hex << V[3] << std::endl;
+                std::cout << "[4]: " << std::hex << V[4] << std::endl;
+                std::cout << "[5]: " << std::hex << V[5] << std::endl;
+                std::cout << "[6]: " << std::hex << V[6] << std::endl;
+                std::cout << "[7]: " << std::hex << V[7] << std::endl;
             }
+            
+         /*       a                b                  c                d
+                  /                /                  /                /
+                  e                f                  g                h     */
+// t = 0 : f6afceb8bcfcddf5 58cb02347ab51f91   6a09e667f3bcc908 510e527fade682d1
+//         bb67ae8584caa73b 9b05688c2b3e6c1f   3c6ef372fe94f82b 1f83d9abfb41bd6b
+// t = 1 : 1320f8c9fb872cc0 c3d4ebfd48650ffa   f6afceb8bcfcddf5 58cb02347ab51f91
+//         6a09e667f3bcc908 510e527fade682d1   bb67ae8584caa73b 9b05688c2b3e6c1f
+// t = 2 : ebcffc07203d91f3 dfa9b239f2697812   1320f8c9fb872cc0 c3d4ebfd48650ffa
+//         f6afceb8bcfcddf5 58cb02347ab51f91   6a09e667f3bcc908 510e527fade682d1
+            
             
             // final values
             std::cout << std::endl << std::endl << std::endl << std::endl;
@@ -187,10 +194,13 @@ class SHA512
                 H[c] += V[c];
                 std::cout << std::hex << H[c];
             }
-            std::cout << "\n\n" << "cf83e1357eefb8bdf1542850d66d8007d620e4050b5"
-                      << "715dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f"
-                      << "63b931bd47417a81a538327af927da3e" << std::endl
-                      << "\t\t\t\t\t\t^ empty string hash value ^";
+            std::cout << "\nddaf35a193617abacc417349ae20413112e6fa4e89a97ea20a9ee"
+                      <<"ee64b55d39a2192992a274fc1a836ba3c23a3feebbd454d442364"
+                      << "3ce80e2a9ac94fa54ca49f";
+            // std::cout << "\n\n" << "cf83e1357eefb8bdf1542850d66d8007d620e4050b5"
+            //           << "715dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f"
+            //           << "63b931bd47417a81a538327af927da3e" << std::endl
+            //           << "\t\t\t\t\t\t^ empty string hash value ^";
         }
 };
 
