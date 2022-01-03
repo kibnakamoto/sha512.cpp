@@ -34,8 +34,7 @@ class SHA512
     protected:
         uint64_t W[80];
         // 80 64 bit unsigned constants for sha512 algorithm
-        const uint64_t K[80] =
-        {
+        const uint64_t K[80] = {
             0x428a2f98d728ae22ULL, 0x7137449123ef65cdULL, 0xb5c0fbcfec4d3b2fULL,
             0xe9b5dba58189dbbcULL, 0x3956c25bf348b538ULL, 0x59f111f1b605d019ULL,
             0x923f82a4af194f9bULL, 0xab1c5ed5da6d8118ULL, 0xd807aa98a3030242ULL,
@@ -89,11 +88,11 @@ class SHA512
             for (int c=0;c<len;c++) {
                 WordArray[c] = msg.c_str()[c];
             }
-            WordArray[len] = (uint8_t)0x80ULL; // append 10000000.
+            WordArray[len] = (uint8_t)0x80; // append 10000000.
             
             // pad W with zeros
             for (int c=0; c<80; c++) {
-                W[c] = 0x00ULL; 
+                W[c] = 0x00; 
             }
             
             // add WordArray to W array
@@ -129,7 +128,7 @@ class SHA512
             // transform
             for (int c=0;c<80;c++)
             {
-                // Σ0 = (ac ≫≫ 28) ⊕ (ac ≫≫ 34) ⊕ (ac ≫≫ 39)
+                // Σ0 = (a ≫≫ 28) ⊕ (a ≫≫ 34) ⊕ (a ≫≫ 39)
                 uint64_t S0 = Rotr(V[0], 28) xor Rotr(V[0], 34) xor Rotr(V[0], 39);
                 
                 // T2 = Σ0 + Maj
@@ -148,30 +147,20 @@ class SHA512
                 V[4] = V[3] + temp1;
                 V[3] = V[2];
                 V[2] = V[1];
+                V[1] = V[0];
                 V[0] = temp1 + temp2;
-                
+
                 /* ================== per-iteration values ================== */
                 std::cout << "iteration round: " << std::dec << c << std::endl;
-                std::cout << "[0]: " << std::hex << V[0] << std::endl;
-                std::cout << "[1]: " << std::hex << V[1] << std::endl;
-                std::cout << "[2]: " << std::hex << V[2] << std::endl;
-                std::cout << "[3]: " << std::hex << V[3] << std::endl;
-                std::cout << "[4]: " << std::hex << V[4] << std::endl;
-                std::cout << "[5]: " << std::hex << V[5] << std::endl;
-                std::cout << "[6]: " << std::hex << V[6] << std::endl;
-                std::cout << "[7]: " << std::hex << V[7] << std::endl;
+                std::cout << "a: " << std::hex << V[0] << std::endl;
+                std::cout << "b: " << std::hex << V[1] << std::endl;
+                std::cout << "c: " << std::hex << V[2] << std::endl;
+                std::cout << "d: " << std::hex << V[3] << std::endl;
+                std::cout << "e: " << std::hex << V[4] << std::endl;
+                std::cout << "f: " << std::hex << V[5] << std::endl;
+                std::cout << "g: " << std::hex << V[6] << std::endl;
+                std::cout << "h: " << std::hex << V[7] << std::endl;
             }
-            
-         /*       a                b                  c                d
-                  /                /                  /                /
-                  e                f                  g                h     */
-// t = 0 : f6afceb8bcfcddf5 58cb02347ab51f91   6a09e667f3bcc908 510e527fade682d1
-//         bb67ae8584caa73b 9b05688c2b3e6c1f   3c6ef372fe94f82b 1f83d9abfb41bd6b
-// t = 1 : 1320f8c9fb872cc0 c3d4ebfd48650ffa   f6afceb8bcfcddf5 58cb02347ab51f91
-//         6a09e667f3bcc908 510e527fade682d1   bb67ae8584caa73b 9b05688c2b3e6c1f
-// t = 2 : ebcffc07203d91f3 dfa9b239f2697812   1320f8c9fb872cc0 c3d4ebfd48650ffa
-//         f6afceb8bcfcddf5 58cb02347ab51f91   6a09e667f3bcc908 510e527fade682d1
-            
             
             // final values
             std::cout << std::endl << std::endl << std::endl << std::endl;
