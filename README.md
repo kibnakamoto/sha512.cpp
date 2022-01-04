@@ -73,4 +73,10 @@ constants:
             0x1f83d9abfb42bd6bULL, 0x5be0cd19137e2179ULL};
 ```
 
+for the a,b,c,d,e,f,g,h values. I used V array. defined as:
+```
+uint64_t V[8]; // initialize hash values
+memcpy(V, H, sizeof(uint64_t)*8);
+```
+
 My code for sha512 in c++ has the smallest number of lines which is good because it shows that my implementation is one of the most efficient for this algorithm.
