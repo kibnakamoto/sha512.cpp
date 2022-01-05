@@ -11,6 +11,9 @@ I made this code when I was 15.
 
 This algorithm took me exactly a month to make (I didn't work on it everday btw). 
 
+
+This algorithm only works for single block message until further updates
+
 _
 
 
