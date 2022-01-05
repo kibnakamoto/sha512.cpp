@@ -7,10 +7,7 @@ Start Date: Dec. 5, 2021
 
 Finalized in: Jan. 5, 2022
 
-Email for questions:
-
-        school Email: cantt5044@wrdsb.ca       (most active on this email)
-        Personal Email: taha.ez.ca@gmail.com     (mostly don't check this email but will check if I get a notification)
+Email: taha.ez.ca@gmail.com
 
 I made this code when I was 15.
 
@@ -20,17 +17,18 @@ This algorithm took me exactly a month to make (I didn't work on it everday btw)
 This algorithm only works for single block message until further updates
 
 Warnings and need to know before using code:
+____________________________________________________________________________________________________________________________________________________________
+I used linux compilers to code this algorithm.
 
-        I used linux compilers to code this algorithm.
+Warning: This code was made in c++ 20 and c++ compilers before c++17 might give warning: SHA512.h:122:18: warning: structured bindings only available with ‘-std=c++17’ or ‘-std=gnu++17’. But still works correctly for one block of data(1024 bits) which doesn't have anything to do with the compiler version since this code only works for single block computation of sha512. if you use an older compiler. Compare values to see if your version is working correctly.
 
-        Warning: This code was made in c++ 20 and c++ compilers before c++17 might give warning: SHA512.h:122:18: warning: structured bindings only available with ‘-std=c++17’ or ‘-std=gnu++17’. But still works correctly for one block of data(1024 bits) which doesn't have anything to do with the compiler version since this code only works for single block computation of sha512. if you use an older compiler. Compare values to see if your version is working correctly.
+I compiled it in c++ 14 with the warning provided in line 17 of this file but still worked same as c++17 or c++20.
+tested without warning or error with c++17 and c++20 in linux. 
 
-        I compiled it in c++ 14 with the warning provided in line 17 of this file but still worked same as c++17 or c++20.
-        tested without warning or error with c++17 and c++20 in linux. 
+For Windows: stdint.h doesn't exist so, you can to download stdint.h from gntp-send/stdint.h at master for it to compile on Windows.
 
-        For Windows: stdint.h doesn't exist so, you can to download stdint.h from gntp-send/stdint.h at master for it to compile on Windows.
-
-        mac compilers should work as far as I can tell.
+mac compilers should work as far as I can tell.
+____________________________________________________________________________________________________________________________________________________________
 _
 
 
