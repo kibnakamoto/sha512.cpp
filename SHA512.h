@@ -2,6 +2,7 @@
  *  github: kibnakamoto
  *   Created on: Dec. 5, 2021
  *      Author: Taha Canturk
+ *       Finalized: Jan. 5 2022
  *        More Info: github.com/kibnakamoto/sha512.cpp/blob/main/README.md
  */
 
@@ -12,15 +13,27 @@
 #include <string>
 #include <cstring>
 #include <stdint.h>
+#include <iomanip>
 
 // choice = (x ∧ y) ⊕ (¯x ∧ z)
-#define Ch(x,y,z) ((x bitand y)xor(~x bitand z))
+inline uint64_t Ch(uint64_t e, uint64_t f, uint64_t g) {
+    return ((e bitand f)xor(~e bitand g));
+}
+// #define Ch(x,y,z) ((x bitand y)xor(~x bitand z))
+
 // // majority = (x ∧ y) ⊕ (x ∧ z) ⊕ (y ∧ z)
-#define Maj(x,y,z) ((x & y)^(x & z)^(y & z))
+inline uint64_t Maj(uint64_t a, uint64_t b, uint64_t c) {
+    return ((a & b)^(a & c)^(b & c));
+}
 
 // // binary operators
-#define Shr(x, n) (x >> n)
-#define Rotr(x, n) ( (x >> n)|(x << (sizeof(x)<<3)-n) )
+inline uint64_t Shr(uint64_t x, unsigned int n) {
+    return (x >> n);
+}
+inline uint64_t Rotr(uint64_t x, unsigned int n) {
+    return ( (x >> n)|(x << (sizeof(x)<<3)-n) );
+}
+
 
 // length which is __uint128_t in 2 uint64_t integers
 inline std::pair<uint64_t,uint64_t> to2_uint64(__uint128_t source) {
@@ -33,6 +46,7 @@ class SHA512
 {
     protected:
         uint64_t W[80];
+        
         // 80 64 bit unsigned constants for sha512 algorithm
         const uint64_t K[80] = {
             0x428a2f98d728ae22ULL, 0x7137449123ef65cdULL, 0xb5c0fbcfec4d3b2fULL,
@@ -62,16 +76,16 @@ class SHA512
             0x28db77f523047d84ULL, 0x32caab7b40c72493ULL, 0x3c9ebe0a15c9bebcULL,
             0x431d67c49c100d4cULL, 0x4cc5d4becb3e42b6ULL, 0x597f299cfc657e2aULL,
             0x5fcb6fab3ad6faecULL, 0x6c44198c4a475817ULL};
+        
+        // initialize hash values
         uint64_t H[8] = {
             0x6a09e667f3bcc908ULL, 0xbb67ae8584caa73bULL,
             0x3c6ef372fe94f82bULL, 0xa54ff53a5f1d36f1ULL,
             0x510e527fade682d1ULL, 0x9b05688c2b3e6c1fULL,
-            0x1f83d9abfb42bd6bULL, 0x5be0cd19137e2179ULL
-        };
+            0x1f83d9abfb41bd6bULL, 0x5be0cd19137e2179ULL};
         
     public:
-        /* default class constructor */
-        SHA512(std::string msg)
+        std::string Sha512(std::string msg)
         {
         	// length in bytes.
             __uint128_t len = msg.length();
@@ -149,27 +163,23 @@ class SHA512
                 V[2] = V[1];
                 V[1] = V[0];
                 V[0] = temp1 + temp2;
-
-                /* ================== per-iteration values ================== */
-                std::cout << "iteration round: " << std::dec << c << std::endl;
-                std::cout << "a: " << std::hex << V[0] << std::endl;
-                std::cout << "b: " << std::hex << V[1] << std::endl;
-                std::cout << "c: " << std::hex << V[2] << std::endl;
-                std::cout << "d: " << std::hex << V[3] << std::endl;
-                std::cout << "e: " << std::hex << V[4] << std::endl;
-                std::cout << "f: " << std::hex << V[5] << std::endl;
-                std::cout << "g: " << std::hex << V[6] << std::endl;
-                std::cout << "h: " << std::hex << V[7] << std::endl;
             }
             
             // final values
             std::cout << std::endl << std::endl << std::endl << std::endl;
+            std::stringstream ss;
             for (int c=0;c<8;c++)
             {
                 H[c] += V[c];
-                std::cout << std::hex << H[c];
+                ss << std::setfill('0') << std::setw(16) << std::hex << (H[c]|0);
             }
+        	return ss.str();
         }
 };
+
+std::string sha512(std::string input) {
+    SHA512 hash;
+    return hash.Sha512(input);
+}
 
 #endif /* SHA512_H_ */
