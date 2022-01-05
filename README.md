@@ -7,6 +7,11 @@ Start Date: Dec. 5, 2021
 
 Finalized in: Jan. 5, 2022
 
+Email for questions:
+
+        school Email: cantt5044@wrdsb.ca       (most active on this email)
+        Personal Email: taha.ez.ca@gmail.com     (mostly don't check this email but will check if I get a notification)
+
 I made this code when I was 15.
 
 This algorithm took me exactly a month to make (I didn't work on it everday btw). 
