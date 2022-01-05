@@ -4,6 +4,7 @@
 
 int main()
 {
+    // this algorithm only works for 1 block
     std::string msg;
     msg = "abc";
     std::cout << sha512(msg);
