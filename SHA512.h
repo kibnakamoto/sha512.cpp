@@ -87,6 +87,10 @@ class SHA512
     public:
         std::string Sha512(std::string msg)
         {
+                // get input
+                std::cout << "input:\t";
+                getline(std::cin, msg);
+
         	// length in bytes.
             __uint128_t len = msg.length();
             
