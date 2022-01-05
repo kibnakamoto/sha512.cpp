@@ -9,6 +9,8 @@ Finalized in: Jan. 5, 2022
 
 I made this code when I was 15.
 
+This algorithm took me exactly a month to make (I didn't work on it everday btw). 
+
 _
 
 
