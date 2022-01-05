@@ -87,10 +87,7 @@ class SHA512
     public:
         std::string Sha512(std::string msg)
         {
-                // get input
-                std::cout << "input:\t";
-                getline(std::cin, msg);
-
+            
         	// length in bytes.
             __uint128_t len = msg.length();
             
@@ -103,7 +100,7 @@ class SHA512
             int blockBytesLen = padding+len+17;
             uint8_t WordArray[blockBytesLen];
             memset(WordArray, 0, blockBytesLen);
-            for (int c=0;c<len;c++) {
+            for (__uint128_t c=0;c<len;c++) {
                 WordArray[c] = msg.c_str()[c];
             }
             WordArray[len] = (uint8_t)0x80; // append 10000000.
