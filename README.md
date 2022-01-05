@@ -3,11 +3,11 @@ sha512 in c++. project just started
 
 Made By: Taha Canturk(Kibnakamoto)
 
-Start Date: dec 5, 2021
+Start Date: Dec. 5, 2021
 
-Finalized in: N/A
+Finalized in: Jan. 5, 2022
 
-I made this code at 15.
+I made this code when I was 15.
 
 _
 
