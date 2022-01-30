@@ -1,5 +1,5 @@
 # sha512.cpp
-sha512 in c++. project just started
+sha512 in c++
 
 Made By: Taha Canturk(Kibnakamoto)
 
