@@ -5,22 +5,24 @@ Made By: Taha Canturk(Kibnakamoto)
 
 Start Date: Dec. 5, 2021
 
-Finalized in: Jan. 5, 2022
+Finalized for single-block processing in: Jan. 5, 2022
+
+Finalized for multi-block processing in: Feb 21, 2022
 
 Email: taha.ez.ca@gmail.com
 
 I made this code when I was 15.
 
-This algorithm took me exactly a month to make (I didn't work on it everday btw). 
+This algorithm took me exactly a month to make (I didn't work on it everyday). 
 
 
-This algorithm only works for single block message until further updates
+This implementation now supports multi-block processing
 
 Warnings and need to know before using code:
 ____________________________________________________________________________________________________________________________________________________________
 I used linux compilers to code this algorithm.
 
-Warning: This code was made in c++ 20 and c++ compilers before c++17 might give warning: SHA512.h:122:18: warning: structured bindings only available with ‘-std=c++17’ or ‘-std=gnu++17’. But still works correctly for one block of data(1024 bits) which doesn't have anything to do with the compiler version since this code only works for single block computation of sha512. if you use an older compiler. Compare values to see if your version is working correctly.
+Warning: This code was made in c++ 20 and c++ compilers before c++17 might give warning: SHA512.h:122:18: warning: structured bindings only available with ‘-std=c++17’ or ‘-std=gnu++17’. This code supports multi-block processing. if you use an older compiler. Compare values to see if your version is working correctly.
 
 I compiled it in c++ 14 with the warning provided in line 17 of this file but still worked same as c++17 or c++20.
 tested without warning or error with c++17 and c++20 in linux. 
@@ -34,7 +36,7 @@ _
 
 length of message is represented by a 128 bit unsigned int that is converted into to 64 bit integers which are appended into the W-array.
 
-operators are defined by macros.
+operators are defined by inline functions.
 
 equations: 
 
@@ -98,5 +100,3 @@ for the a,b,c,d,e,f,g,h values. I used V array. defined as:
 uint64_t V[8]; // initialize hash values
 memcpy(V, H, sizeof(uint64_t)*8);
 ```
-
-My code for sha512 in c++ has the smallest number of lines which is good because it shows that my implementation is one of the most efficient for this algorithm.
