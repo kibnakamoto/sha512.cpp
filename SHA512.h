@@ -82,8 +82,12 @@ class SHA512
                          0x1f83d9abfb41bd6bULL, 0x5be0cd19137e2179ULL};
             
             // transform
-            uint64_t* transform(uint64_t* TMP, uint64_t* V)
+            uint64_t* transform(uint64_t* TMP)
             {
+                // initialize hash values
+                uint64_t V[8];
+                memcpy(V, H, sizeof(uint64_t)*8);
+
                 // create message schedule
                 for (int c=16;c<80;c++)
                 {
@@ -128,7 +132,11 @@ class SHA512
                                   << V[i] << "\tc:\t" << std::dec << c << std::endl;
                     }
                 }
-                return V;
+                for(int c=0;c<8;c++) {
+                    H[c] += V[c];
+                }
+
+                return H;
             }
         
     public:
@@ -171,9 +179,6 @@ class SHA512
             W[Shr(padding+len+1,3)+1] = fst;
             W[Shr(padding+len+1,3)+2] = snd;
             
-            // initialize hash values
-            uint64_t V[8];
-            memcpy(V, H, sizeof(uint64_t)*8);
             uint64_t TMP[80];
             for(int c=0;c<80;c++) {
                 TMP[c] = 0x00;
@@ -181,16 +186,13 @@ class SHA512
             for(int i=0;i<16;i++) {
                 TMP[i] = W[i];
             }
-            transform(TMP, V);
-            for(int c=0;c<8;c++) {
-                V[c] += H[c];
-            }
+            transform(TMP);
             for(int i=0;i<16;i++) {
                 TMP[i] = W[i+16];
             }
-            uint64_t* tmp = transform(TMP, V);
+            uint64_t* tmp = transform(TMP);
             for(int c=0;c<8;c++) {
-                V[c] = tmp[c]; // give value of V the prev value of V not H;
+                std::cout << std::hex << tmp[c] << " ";
             }
             /* problem is prev V = current V in M(2). V not H in second block
                create algorithm to solve it */
@@ -199,7 +201,7 @@ class SHA512
             for (int c=0;c<8;c++)
             {
                 // H[c] += V[c];
-                ss << std::setfill('0') << std::setw(16) << std::hex << (V[c]|0);
+                ss << std::setfill('0') << std::setw(16) << std::hex << (H[c]|0);
             }
         	return ss.str();
         }
