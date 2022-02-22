@@ -179,28 +179,22 @@ class SHA512
             W[Shr(padding+len+1,3)+1] = fst;
             W[Shr(padding+len+1,3)+2] = snd;
             
+            /* multi-block processing start */
             uint64_t TMP[80];
             for(int c=0;c<80;c++) {
                 TMP[c] = 0x00;
             }
-            for(int i=0;i<16;i++) {
-                TMP[i] = W[i];
+            
+            // multi-block processing
+            for(int c=0;c<blockBytesLen/128;c++) {
+                for(int i=0;i<16;i++)
+                    TMP[i] = W[i+16*c];
+                transform(TMP);
             }
-            transform(TMP);
-            for(int i=0;i<16;i++) {
-                TMP[i] = W[i+16];
-            }
-            uint64_t* tmp = transform(TMP);
-            for(int c=0;c<8;c++) {
-                std::cout << std::hex << tmp[c] << " ";
-            }
-            /* problem is prev V = current V in M(2). V not H in second block
-               create algorithm to solve it */
             
             std::stringstream ss;
             for (int c=0;c<8;c++)
             {
-                // H[c] += V[c];
                 ss << std::setfill('0') << std::setw(16) << std::hex << (H[c]|0);
             }
         	return ss.str();
