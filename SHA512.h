@@ -45,8 +45,6 @@ inline std::pair<uint64_t,uint64_t> to2_uint64(__uint128_t source) {
 class SHA512
 {
     protected:
-        uint64_t W[80];
-        
         // 80 64 bit unsigned constants for sha512 algorithm
         const uint64_t K[80] = {
             0x428a2f98d728ae22ULL, 0x7137449123ef65cdULL, 0xb5c0fbcfec4d3b2fULL,
@@ -78,11 +76,60 @@ class SHA512
             0x5fcb6fab3ad6faecULL, 0x6c44198c4a475817ULL};
         
         // initialize hash values
-        uint64_t H[8] = {
-            0x6a09e667f3bcc908ULL, 0xbb67ae8584caa73bULL,
-            0x3c6ef372fe94f82bULL, 0xa54ff53a5f1d36f1ULL,
-            0x510e527fade682d1ULL, 0x9b05688c2b3e6c1fULL,
-            0x1f83d9abfb41bd6bULL, 0x5be0cd19137e2179ULL};
+        uint64_t H[8] = {0x6a09e667f3bcc908ULL, 0xbb67ae8584caa73bULL,
+                         0x3c6ef372fe94f82bULL, 0xa54ff53a5f1d36f1ULL,
+                         0x510e527fade682d1ULL, 0x9b05688c2b3e6c1fULL,
+                         0x1f83d9abfb41bd6bULL, 0x5be0cd19137e2179ULL};
+            
+            // transform
+            uint64_t* transform(uint64_t* TMP, uint64_t* V)
+            {
+                // create message schedule
+                for (int c=16;c<80;c++)
+                {
+                    // σ0 = (w[c−15] ≫≫ 1) ⊕ (w[c−15] ≫≫ 8) ⊕ (w[c−15] ≫ 7)
+                    uint64_t s0 = Rotr(TMP[c-15],1) xor Rotr(TMP[c-15],8) xor 
+                                       Shr(TMP[c-15],7);
+                    
+                    // σ1 = (w[c−2] ≫≫ 19) ⊕ (w[c−2] ≫≫ 61) ⊕ (w[c−2] ≫ 6)
+                    uint64_t s1 = Rotr(TMP[c-2],19) xor Rotr(TMP[c-2],61) xor 
+                                  Shr(TMP[c-2],6);
+                    
+                    // uint64_t does binary addition 2^64.
+                    // w[c] = w[c−16] [+] σ0 [+] w[c−7] [+] σ1
+                    TMP[c] = TMP[c-16] + s0 + TMP[c-7] + s1;
+                }
+                
+                for (int c=0;c<80;c++)
+                {
+                    // Σ0 = (a ≫≫ 28) ⊕ (a ≫≫ 34) ⊕ (a ≫≫ 39)
+                    uint64_t S0 = Rotr(V[0], 28) xor Rotr(V[0], 34) xor Rotr(V[0], 39);
+                    
+                    // T2 = Σ0 + Maj
+                    uint64_t temp2 = S0 + Maj(V[0], V[1], V[2]);
+                    
+                    // Σ1 = (e ≫≫ 14) ⊕ (e ≫≫ 18) ⊕ (e ≫≫ 41)
+                    uint64_t S1 = Rotr(V[4], 14) xor Rotr(V[4], 18) xor Rotr(V[4], 41);
+                    
+                    // T1 = h + Σ1 + Ch[e,f,g] + K[c] + W[c]
+                    uint64_t temp1 = V[7] + S1 + Ch(V[4], V[5], V[6]) + K[c] + TMP[c];
+                    
+                    // modify hash values
+                    V[7] = V[6];
+                    V[6] = V[5];
+                    V[5] = V[4];
+                    V[4] = V[3] + temp1;
+                    V[3] = V[2];
+                    V[2] = V[1];
+                    V[1] = V[0];
+                    V[0] = temp1 + temp2;
+                    for(int i=0;i<8;i++) {
+                        std::cout << "V[" << std::dec << i << "]:\t" << std::hex
+                                  << V[i] << "\tc:\t" << std::dec << c << std::endl;
+                    }
+                }
+                return V;
+            }
         
     public:
         std::string Sha512(std::string msg)
@@ -95,9 +142,9 @@ class SHA512
             __uint128_t bitlen = len << 3;
             
             // padding with zeros
-            unsigned int padding = ((1024-(bitlen+1)-128) % 1024)-7;
+            unsigned int padding = ((1024-(bitlen+1)-128) % 1024)-7; // in bits
             padding /= 8; // in bytes.
-            int blockBytesLen = padding+len+17;
+            __uint128_t blockBytesLen = padding+len+17;
             uint8_t WordArray[blockBytesLen];
             memset(WordArray, 0, blockBytesLen);
             for (__uint128_t c=0;c<len;c++) {
@@ -105,13 +152,13 @@ class SHA512
             }
             WordArray[len] = (uint8_t)0x80; // append 10000000.
             
+            uint64_t W[blockBytesLen/8];
             // pad W with zeros
-            for (int c=0; c<80; c++) {
-                W[c] = 0x00; 
+            for (int c=0; c<blockBytesLen/8; c++) {
+                W[c] = 0x00;
             }
             
-            // add WordArray to W array
-            // 8 bit array values to 64 bit array using 64 bit integer pointer.
+            // 8 bit array values to 64 bit array using 64 bit integer array.
             for (int i=0; i<len/8+1; i++) {
                 W[i] = (uint64_t)WordArray[i*8]<<56;
                 for (int j=1; j<=6; j++)
@@ -124,55 +171,35 @@ class SHA512
             W[Shr(padding+len+1,3)+1] = fst;
             W[Shr(padding+len+1,3)+2] = snd;
             
-            // create message schedule
-            for (int c=16;c<80;c++)
-            {
-                // σ0 = (w[c−15] ≫≫ 1) ⊕ (w[c−15] ≫≫ 8) ⊕ (w[c−15] ≫ 7)
-                uint64_t s0 = Rotr(W[c-15],1) xor Rotr(W[c-15],8) xor Shr(W[c-15],7);
-                
-                // σ1 = (w[c−2] ≫≫ 19) ⊕ (w[c−2] ≫≫ 61) ⊕ (w[c−2] ≫ 6)
-                uint64_t s1 = Rotr(W[c-2],19) xor Rotr(W[c-2],61) xor Shr(W[c-2],6);
-                
-                // uint64_t does binary addition 2^64.
-                // w[c] = w[c−16] [+] σ0 [+] w[c−7] [+] σ1
-                W[c] = W[c-16] + s0 + W[c-7] + s1;
-            }
-            uint64_t V[8]; // initialize hash values
+            // initialize hash values
+            uint64_t V[8];
             memcpy(V, H, sizeof(uint64_t)*8);
-            
-            // transform
-            for (int c=0;c<80;c++)
-            {
-                // Σ0 = (a ≫≫ 28) ⊕ (a ≫≫ 34) ⊕ (a ≫≫ 39)
-                uint64_t S0 = Rotr(V[0], 28) xor Rotr(V[0], 34) xor Rotr(V[0], 39);
-                
-                // T2 = Σ0 + Maj
-                uint64_t temp2 = S0 + Maj(V[0], V[1], V[2]);
-                
-                // Σ1 = (e ≫≫ 14) ⊕ (e ≫≫ 18) ⊕ (e ≫≫ 41)
-                uint64_t S1 = Rotr(V[4], 14) xor Rotr(V[4], 18) xor Rotr(V[4], 41);
-                
-                // T1 = h + Σ1 + Ch[e,f,g] + K[c] + W[c]
-                uint64_t temp1 = V[7] + S1 + Ch(V[4], V[5], V[6]) + K[c] + W[c];
-                
-                // modify hash values
-                V[7] = V[6];
-                V[6] = V[5];
-                V[5] = V[4];
-                V[4] = V[3] + temp1;
-                V[3] = V[2];
-                V[2] = V[1];
-                V[1] = V[0];
-                V[0] = temp1 + temp2;
+            uint64_t TMP[80];
+            for(int c=0;c<80;c++) {
+                TMP[c] = 0x00;
             }
+            for(int i=0;i<16;i++) {
+                TMP[i] = W[i];
+            }
+            transform(TMP, V);
+            for(int c=0;c<8;c++) {
+                V[c] += H[c];
+            }
+            for(int i=0;i<16;i++) {
+                TMP[i] = W[i+16];
+            }
+            uint64_t* tmp = transform(TMP, V);
+            for(int c=0;c<8;c++) {
+                V[c] = tmp[c]; // give value of V the prev value of V not H;
+            }
+            /* problem is prev V = current V in M(2). V not H in second block
+               create algorithm to solve it */
             
-            // final values
-            std::cout << std::endl << std::endl << std::endl << std::endl;
             std::stringstream ss;
             for (int c=0;c<8;c++)
             {
-                H[c] += V[c];
-                ss << std::setfill('0') << std::setw(16) << std::hex << (H[c]|0);
+                // H[c] += V[c];
+                ss << std::setfill('0') << std::setw(16) << std::hex << (V[c]|0);
             }
         	return ss.str();
         }
