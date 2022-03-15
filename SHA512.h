@@ -19,7 +19,6 @@
 inline uint64_t Ch(uint64_t e, uint64_t f, uint64_t g) {
     return ((e bitand f)xor(~e bitand g));
 }
-// #define Ch(x,y,z) ((x bitand y)xor(~x bitand z))
 
 // // majority = (x ∧ y) ⊕ (x ∧ z) ⊕ (y ∧ z)
 inline uint64_t Maj(uint64_t a, uint64_t b, uint64_t c) {
@@ -127,10 +126,6 @@ class SHA512
                     V[2] = V[1];
                     V[1] = V[0];
                     V[0] = temp1 + temp2;
-                    for(int i=0;i<8;i++) {
-                        std::cout << "V[" << std::dec << i << "]:\t" << std::hex
-                                  << V[i] << "\tc:\t" << std::dec << c << std::endl;
-                    }
                 }
                 for(int c=0;c<8;c++) {
                     H[c] += V[c];
